@@ -1,0 +1,85 @@
+<div class="container-fluid background min-vh-100 p-3">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center mb-3">
+    <button class="btn btn-light btn-sm rounded-circle me-2">
+      <i class="fa fa-arrow-left"></i>
+    </button>
+    <h5 class="fw-bold mb-0">Ride details</h5>
+  </div>
+
+  <!-- Map -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+    <!-- MAP -->
+    <div class="map-placeholder">
+      <!-- Google Maps / Leaflet here -->
+      <span class="text-muted small">Map preview</span>
+    </div>
+  </div>
+
+  <!-- Route info -->
+  <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
+    <div class="mb-2">
+      <span class="fw-bold">Bujumbura</span>
+      <i class="bi bi-arrow-right mx-2"></i>
+      <span class="fw-bold">Gitega</span>
+    </div>
+
+    <div class="row small text-muted">
+      <div class="col-6">
+        <i class="bi bi-calendar"></i> 12 Jan 2026
+      </div>
+      <div class="col-6">
+        <i class="bi bi-clock"></i> 08:30
+      </div>
+      <div class="col-6 mt-2">
+        <i class="bi bi-geo-alt"></i> 120 km
+      </div>
+      <div class="col-6 mt-2">
+        <i class="bi bi-people"></i> 3 seats left
+      </div>
+    </div>
+  </div>
+
+  <!-- Driver -->
+  <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
+    <div class="d-flex align-items-center">
+      <div class="avatar me-3">J</div>
+      <div class="flex-grow-1">
+        <div class="fw-semibold">Jean Claude</div>
+        <div class="text-muted small">⭐ 4.8 · 120 trips</div>
+      </div>
+      <a href="/chat/1" class="btn btn-outline-info btn-sm rounded-pill">
+        <i class="fa fa-comment mx-1"></i>
+        <span class="fw-bold">Chat</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  <div class="card border-0 shadow-sm rounded-4 p-3 mb-5 blackOrWhite">
+    <h6 class="fw-semibold mb-2">Additional info</h6>
+    <p class="small text-muted mb-0">
+      Departure on time. No smoking. Small luggage allowed.
+    </p>
+  </div>
+
+</div>
+
+<!-- Bottom booking bar -->
+<div class="booking-bar shadow-lg">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <div class="small text-muted">Price</div>
+      <div class="fw-bold fs-5 principal">15 000 BIF</div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary rounded-pill px-4">
+        Cancel
+      </button>
+      <button class="btn button principal rounded-pill px-4">
+        Book now
+      </button>
+    </div>
+  </div>
+</div>

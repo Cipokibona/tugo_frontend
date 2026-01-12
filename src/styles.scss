@@ -1,1 +1,130 @@
 /* You can add global styles to this file, and also import other style files */
+@use 'sass:color';
+:root {
+  --color-principal: #ff7200;
+  --color-secondary: #3dafd1;
+  --color-background: #f1f1f1;
+  --color-text: #1e1d23;
+  --color-text-secondary: #678cdd;
+  --color-backgroundBlackOrWhite: white;
+  --color-textBlackOrWhite: black;
+}
+
+// 🌙 Dark mode automatique
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-principal: #ff7200;
+    --color-secondary: #00acc1;
+    --color-background: #121212;
+    --color-text: #f1f1f1;
+    --color-text-secondary: #b3e5fc;
+    --color-backgroundBlackOrWhite: black;
+    --color-textBlackOrWhite: white;
+  }
+}
+
+// 🎨 SCSS variables (liées aux variables CSS)
+$color-text: var(--color-text);
+$color-text-secondary: var(--color-text-secondary);
+$color-principal: var(--color-principal);
+$color-secondary: var(--color-secondary);
+$color-background: var(--color-background);
+$color-backgroundBlackOrWhite: var(--color-backgroundBlackOrWhite);
+$color-textBlackOrWhite: var(--color-textBlackOrWhite);
+$color-bg-principal: rgba(#ff7200, 0.15); // fixe (car CSS var ne fonctionne pas dans rgba)
+$color-bg-secondary: rgba(#3dafd1, 0.15);
+$color-disabled-principal: #666666;
+$color-disabled-secondary: #888888;
+
+// 🌍 Base
+body {
+  // font-family: 'Roboto', sans-serif;
+  background-color: var(--color-background) !important;
+  color: var(--color-text) !important;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+// 🎯 Text utilities
+.text-principal {
+  color: $color-text !important;
+}
+.text-secondary {
+  color: $color-text-secondary !important;
+}
+.principal {
+  color: $color-principal !important;
+}
+.secondary {
+  color: $color-secondary !important;
+}
+
+// 🧱 Background utilities
+.background {
+  &.principal {
+    background-color: $color-principal !important;
+    color: white !important;
+  }
+  &.secondary {
+    background-color: $color-secondary !important;
+    color: black !important;
+  }
+  &.normal {
+    background-color: $color-background !important;
+    color: $color-text !important;
+  }
+  &.blackOrWhite {
+    background-color: $color-backgroundBlackOrWhite !important;
+    color: $color-textBlackOrWhite !important
+  }
+  &.info-principal {
+    background-color: $color-bg-principal !important;
+    color: $color-principal !important;
+  }
+  &.info-secondary {
+    background-color: $color-bg-secondary !important;
+    color: $color-secondary !important;
+  }
+}
+
+// 🧷 Boutons
+.button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s, color 0.3s, border 0.3s;
+
+  &.principal {
+    background-color: $color-principal;
+    color: black !important;
+
+    &:hover {
+      background-color: color.adjust(#ff7200, $lightness: -10%);
+      color: white !important;
+    }
+
+    &.disabled {
+      background-color: $color-disabled-principal;
+      cursor: not-allowed;
+    }
+  }
+
+  &.secondary {
+    background-color: $color-text-secondary;
+    color: $color-principal !important;
+
+    &:hover {
+      background-color: $color-principal !important;
+      color: #fff !important;
+    }
+
+    &.disabled {
+      background-color: $color-disabled-secondary;
+      cursor: not-allowed;
+    }
+  }
+}

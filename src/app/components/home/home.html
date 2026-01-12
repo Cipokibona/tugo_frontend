@@ -1,0 +1,120 @@
+<div class="container-fluid background min-vh-100 p-3">
+
+  <!-- Header -->
+  <div class="row mb-4 align-items-center">
+    <div class="col-8">
+      <h4 class="fw-bold mb-0">Available rides</h4>
+      <p class="text-muted small">Find a ride near you</p>
+    </div>
+    <!-- logo
+    <div class="col-4 text-end">
+      <img src="/logo_tugo.svg" alt="Tugo" style="width: 4rem;">
+    </div> -->
+  </div>
+
+  <!-- Search bar -->
+  <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 blackOrWhite">
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input type="text" class="form-control form-control-sm" placeholder="From">
+      </div>
+      <div class="col-md-4">
+        <input type="text" class="form-control form-control-sm" placeholder="To">
+      </div>
+      <div class="col-md-3">
+        <input type="date" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-1 d-grid">
+        <button class="btn principal btn-sm rounded-3">
+          <i class="fa fa-search"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation tabs -->
+  <div class="mb-4">
+    <ul class="nav nav-pills nav-fill gap-2 p-1 rounded-4 shadow-sm blackOrWhite flex-nowrap overflow-auto">
+
+      <li class="nav-item">
+        <a
+          class="nav-link active rounded-pill px-3"
+          href="#"
+        >
+          All itineraries
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a
+          class="nav-link rounded-pill px-3"
+          href="#"
+        >
+          Users itineraries
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a
+          class="nav-link rounded-pill px-3"
+          href="#"
+        >
+          Proposed itineraries
+        </a>
+      </li>
+
+    </ul>
+  </div>
+
+
+  <!-- Ride list -->
+  <div class="row g-3">
+
+    <!-- Ride card -->
+    <div class="col-md-6 col-lg-4">
+      <a href="details-trip/1" class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite h-100 link-underline link-underline-opacity-0">
+
+        <!-- Route -->
+        <div class="mb-2">
+          <span class="fw-semibold">Bujumbura</span>
+          <i class="bi bi-arrow-right mx-2"></i>
+          <span class="fw-semibold">Gitega</span>
+        </div>
+
+        <!-- Info -->
+        <div class="d-flex justify-content-between small text-muted mb-2">
+          <span><i class="bi bi-calendar"></i> 12 Jan 2026</span>
+          <span><i class="bi bi-clock"></i> 08:30</span>
+        </div>
+
+        <!-- Driver -->
+        <div class="d-flex align-items-center mb-3">
+          <div class="avatar me-2">J</div>
+          <div>
+            <div class="fw-semibold small">Jean Claude</div>
+            <div class="text-muted small">⭐ 4.8</div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="fw-bold principal">15 000 BIF</span>
+          <button class="btn button principal btn-sm rounded-pill">
+            Book
+          </button>
+        </div>
+
+
+      </a>
+    </div>
+
+    <!-- Duplicate card for loop -->
+    <!-- @for(trip of trips; track trip.id) {} -->
+
+  </div>
+
+  <a href="/form-trip" class="fab-add shadow-lg">
+    <i class="fa fa-sm fa-plus"></i>
+  </a>
+
+</div>
