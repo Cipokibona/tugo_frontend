@@ -103,3 +103,17 @@
   20% { opacity: 1; }
   100% { opacity: .2; }
 }
+
+.chat-input .fa-microphone {
+  color: #ff7200;
+}
+
+.chat-input .fa-stop {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
