@@ -15,7 +15,8 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    component: Login
+    component: Login,
+    data: { hideNav: true }
   },
   {
     path: 'sign-up',
