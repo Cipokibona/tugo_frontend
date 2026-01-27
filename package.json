@@ -34,8 +34,10 @@
     "@angular/ssr": "^21.0.4",
     "@fortawesome/fontawesome-free": "^7.1.0",
     "@popperjs/core": "^2.11.8",
+    "@types/jwt-decode": "^2.2.1",
     "bootstrap": "^5.3.8",
     "express": "^5.1.0",
+    "jwt-decode": "^4.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "^0.16.0"

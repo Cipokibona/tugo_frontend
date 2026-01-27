@@ -67,51 +67,67 @@
   </div>
 
 
-  <!-- Ride list -->
-  <div class="row g-3">
-
-    <!-- Ride card -->
-    <div class="col-md-6 col-lg-4">
-      <a href="details-trip/1" class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite h-100 link-underline link-underline-opacity-0">
-
-        <!-- Route -->
-        <div class="mb-2">
-          <span class="fw-semibold">Bujumbura</span>
-          <i class="bi bi-arrow-right mx-2"></i>
-          <span class="fw-semibold">Gitega</span>
-        </div>
-
-        <!-- Info -->
-        <div class="d-flex justify-content-between small text-muted mb-2">
-          <span><i class="bi bi-calendar"></i> 12 Jan 2026</span>
-          <span><i class="bi bi-clock"></i> 08:30</span>
-        </div>
-
-        <!-- Driver -->
-        <div class="d-flex align-items-center mb-3">
-          <div class="avatar me-2">J</div>
-          <div>
-            <div class="fw-semibold small">Jean Claude</div>
-            <div class="text-muted small">⭐ 4.8</div>
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="d-flex justify-content-between align-items-center">
-          <span class="fw-bold principal">15 000 BIF</span>
-          <button class="btn button principal btn-sm rounded-pill">
-            Book
-          </button>
-        </div>
-
-
-      </a>
+  @if(loading){
+    <!-- Loading spinner -->
+    <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+      <div class="spinner-border principal" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
     </div>
+  }@else{
+    @if(rides.length === 0){
+      <!-- No rides available -->
+      <div class="text-center text-muted my-5">
+        <i class="fa fa-car fa-3x mb-3"></i>
+        <h5>No rides available</h5>
+        <p>Try adjusting your search criteria or check back later.</p>
+      </div>
+    }
+    <!-- Ride list -->
+    <div class="row g-3">
+      @for(ride of rides; track ride.id) {
+      <!-- Ride card -->
+      <div class="col-md-6 col-lg-4">
+        <a [routerLink]="['/details-trip', ride.id]" class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite h-100 link-underline link-underline-opacity-0">
 
-    <!-- Duplicate card for loop -->
-    <!-- @for(trip of trips; track trip.id) {} -->
+          <!-- Route -->
+          <div class="mb-2">
+            <span class="fw-semibold">{{ ride.from_city }}</span>
+            <i class="bi bi-arrow-right mx-2"></i>
+            <span class="fw-semibold">{{ ride.to_city }}</span>
+          </div>
 
-  </div>
+          <!-- Info -->
+          <div class="d-flex justify-content-between small text-muted mb-2">
+            <span><i class="bi bi-calendar"></i> {{ ride.departure_date | date:'dd MMM yyyy' }}</span>
+            <span><i class="bi bi-clock"></i> {{ ride.departure_time }}</span>
+          </div>
+
+          <!-- Driver -->
+          <div class="d-flex align-items-center mb-3">
+            <div class="avatar me-2">{{ transform(ride.driver_username.charAt(0)) }}</div>
+            <div>
+              <div class="fw-semibold small">{{ ride.driver_username }}</div>
+              <div class="text-muted small">⭐ {{ ride.drive_rating }}</div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold principal">{{ride.price | number : '1.0-0' }} BIF</span>
+            <button class="btn button principal btn-sm rounded-pill">
+              Book
+            </button>
+          </div>
+
+
+        </a>
+      </div>
+      }
+
+    </div>
+  }
+
 
   <a href="/form-trip" class="fab-add shadow-lg">
     <i class="fa fa-sm fa-plus"></i>
