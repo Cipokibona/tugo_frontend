@@ -47,16 +47,6 @@ export class ServiceApi {
   }
 
   getToken(): any | null {
-    // return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    // if (typeof window === 'undefined') {
-    //     console.warn('Window is undefined - running on server-side');
-    //     return null; // Environnement de serveur
-    // }
-    // const token = localStorage.getItem('token');
-    // if (!token) {
-    //     console.warn('No token found in local storage');
-    // }
-    // return token;
     if (typeof window === 'undefined') {
         console.warn('Window is undefined - running on server-side');
         return null; // Environnement de serveur

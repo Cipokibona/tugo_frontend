@@ -39,7 +39,8 @@
       <li class="nav-item">
         <a
           class="nav-link active rounded-pill px-3"
-          href="#"
+          [class.active]="activeTab === 'ALL'"
+          (click)="activeTab='ALL'; applyRideFilter()"
         >
           All itineraries
         </a>
@@ -48,7 +49,8 @@
       <li class="nav-item">
         <a
           class="nav-link rounded-pill px-3"
-          href="#"
+          [class.active]="activeTab === 'USER'"
+          (click)="activeTab='USER'; applyRideFilter()"
         >
           Users itineraries
         </a>
@@ -57,7 +59,8 @@
       <li class="nav-item">
         <a
           class="nav-link rounded-pill px-3"
-          href="#"
+          [class.active]="activeTab === 'PROPOSED'"
+          (click)="activeTab='PROPOSED'; applyRideFilter()"
         >
           Proposed itineraries
         </a>
@@ -75,7 +78,7 @@
       </div>
     </div>
   }@else{
-    @if(ridesOpen.length === 0){
+    @if(rides.length === 0){
       <!-- No rides available -->
       <div class="text-center text-muted my-5">
         <i class="fa fa-car fa-3x mb-3"></i>
@@ -85,7 +88,7 @@
     }
     <!-- Ride list -->
     <div class="row g-3">
-      @for(ride of ridesOpen; track ride.id) {
+      @for(ride of rides; track ride.id) {
       <!-- Ride card -->
       <div class="col-md-6 col-lg-4">
         <a [routerLink]="['/details-trip', ride.id]" class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite h-100 link-underline link-underline-opacity-0">
@@ -114,10 +117,18 @@
 
           <!-- Footer -->
           <div class="d-flex justify-content-between align-items-center">
-            <span class="fw-bold principal">{{ride.price | number : '1.0-0' }} BIF</span>
-            <button class="btn button principal btn-sm rounded-pill">
-              Book
-            </button>
+            <span class="fw-bold principal">
+              {{ride.price | number : '1.0-0' }} BIF
+            </span>
+            @if(!isMyRide(ride)){
+              <button class="btn button principal btn-sm rounded-pill">
+                Book
+              </button>
+            } @else {
+              <span class="badge bg-success rounded-pill">
+                Your ride
+              </span>
+            }
           </div>
 
 

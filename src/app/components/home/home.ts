@@ -20,6 +20,8 @@ export class Home implements OnInit {
   loading = false;
   errorPage: any | null = null;
 
+  activeTab: 'ALL' | 'USER' | 'PROPOSED' = 'ALL';
+
   filteredRides: any[] = [];
   filters = {
     from: '',
@@ -31,6 +33,7 @@ export class Home implements OnInit {
 
   ngOnInit() {
     this.getRides();
+    this.getUser();
   }
 
   transform(data: string) : string {
@@ -38,21 +41,71 @@ export class Home implements OnInit {
     return data.charAt(0).toUpperCase() + data.slice(1);
   }
 
+  getUser(){
+    this.service.getUser().subscribe({
+      next:user=>{
+        this.user=user;
+        console.log("utilisateur connecte",this.user);
+        this.applyRideFilter(); //
+      },
+      error: err =>console.log("erreur pour l'utilisateur connecte",err)
+    })
+  }
+
   getRides(){
     this.loading = true;
     this.service.getRides().subscribe({
-      next: (data: any) => {
-        this.rides = data;
-        this.ridesOpen = this.rides.filter(ride => ride.status === 'OPEN');
+      next: (data: any[]) => {
+        // this.rides = data || [];
+
+        // uniquement les rides ouverts
+        this.filteredRides = data || [];
+        this.rides = this.filteredRides.filter(r => r.status === 'OPEN');
+
+        this.applyRideFilter(); // 🔥
         this.loading = false;
-        console.log('Rides loaded:', this.rides);
       },
       error: (error: any) => {
         this.errorPage = error.detail;
         this.loading = false;
-        console.error('Error loading rides:', error);
+        console.error(error);
       }
     });
   }
+
+applyRideFilter() {
+  if (!this.user) {
+    // this.rides = this.filteredRides.filter(ride => ride.status === 'OPEN');
+    this.rides = [];
+    return;
+  }
+
+  switch (this.activeTab) {
+
+    case 'USER':
+      // Mes rides
+      this.rides = this.filteredRides.filter(
+        ride => ride.driver === this.user.id
+      );
+      break;
+
+    case 'PROPOSED':
+      // Rides des autres
+      this.rides = this.filteredRides.filter(
+        ride => ride.status === 'PROPOSED'
+      );
+      break;
+
+    default:
+      // Tous
+      // this.rides = [...this.filteredRides];
+      this.rides = this.filteredRides.filter(ride => ride.status === 'OPEN');
+  }
+}
+
+isMyRide(ride: any): boolean {
+  return this.user && ride.driver === this.user.id;
+}
+
 
 }
