@@ -13,6 +13,7 @@ export class Home implements OnInit {
   rides: any[] = [];
   usersRides: any[] = [];
   proposedRides: any[] = [];
+  ridesOpen: any[] = [];
 
   user: any | null = null;
 
@@ -32,11 +33,17 @@ export class Home implements OnInit {
     this.getRides();
   }
 
+  transform(data: string) : string {
+    if (!data) return data; // Verifie si la donnée est vide ou null
+    return data.charAt(0).toUpperCase() + data.slice(1);
+  }
+
   getRides(){
     this.loading = true;
     this.service.getRides().subscribe({
       next: (data: any) => {
         this.rides = data;
+        this.ridesOpen = this.rides.filter(ride => ride.status === 'OPEN');
         this.loading = false;
         console.log('Rides loaded:', this.rides);
       },

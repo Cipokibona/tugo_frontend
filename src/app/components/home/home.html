@@ -75,7 +75,7 @@
       </div>
     </div>
   }@else{
-    @if(rides.length === 0){
+    @if(ridesOpen.length === 0){
       <!-- No rides available -->
       <div class="text-center text-muted my-5">
         <i class="fa fa-car fa-3x mb-3"></i>
@@ -85,7 +85,7 @@
     }
     <!-- Ride list -->
     <div class="row g-3">
-      @for(ride of rides; track ride.id) {
+      @for(ride of ridesOpen; track ride.id) {
       <!-- Ride card -->
       <div class="col-md-6 col-lg-4">
         <a [routerLink]="['/details-trip', ride.id]" class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite h-100 link-underline link-underline-opacity-0">

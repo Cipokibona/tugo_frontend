@@ -46,12 +46,66 @@ export class ServiceApi {
     window.location.href = '/login';
   }
 
-  getToken(): string | null {
-    return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  getToken(): any | null {
+    // return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    // if (typeof window === 'undefined') {
+    //     console.warn('Window is undefined - running on server-side');
+    //     return null; // Environnement de serveur
+    // }
+    // const token = localStorage.getItem('token');
+    // if (!token) {
+    //     console.warn('No token found in local storage');
+    // }
+    // return token;
+    if (typeof window === 'undefined') {
+        console.warn('Window is undefined - running on server-side');
+        return null; // Environnement de serveur
+    }
+
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        console.warn('No token found in local storage');
+        return null;
+    }
+
+    // Vérifier si le token est expiré
+    if (this.isAccessTokenExpired(token)) {
+        return this.refreshToken().pipe(
+            switchMap(():any => {
+                // Une fois le token rafraîchi, retourner le nouveau token
+                const newToken = localStorage.getItem('token');
+                return newToken; // Retourner le nouveau token
+            }),
+            catchError((err):any => {
+                console.error('Error refreshing token:', err);
+                return null; // Retourner null en cas d'échec du rafraîchissement
+            })
+        );
+    }
+
+    return token; // Retourne le token existant s'il n'est pas expiré
   }
 
+  isAccessTokenExpired(token: string): boolean {
+    // Décodage du token (généralement au format JWT)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    // Vérification de l'expiration
+    const expirationTime = payload.exp * 1000; // Convertir en millisecondes
+    return Date.now() >= expirationTime; // Renvoie true si le token est expiré
+}
+
   getRefreshToken(): string | null {
-    return typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+    // return typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+    if (typeof window === 'undefined') {
+        console.warn('Window is undefined - running on server-side');
+        return null; // Environnement de serveur
+    }
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
+        console.warn('No refresh token found in local storage');
+    }
+    return refreshToken;
   }
 
   refreshToken(): Observable<void> {
@@ -62,7 +116,11 @@ export class ServiceApi {
     tap(response => {
       localStorage.setItem('token', response.access);
     }),
-    map(() => {})
+    map(() => {}),
+    catchError(err => {
+      console.error('Error refreshing token:', err);
+      return throwError(() => new Error('Error refreshing token'));
+    })
   );
 }
 
