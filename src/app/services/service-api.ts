@@ -47,45 +47,53 @@ export class ServiceApi {
     window.location.href = '/login';
   }
 
-  getToken(): any | null {
-    if (typeof window === 'undefined') {
-        console.warn('Window is undefined - running on server-side');
-        return null; // Environnement de serveur
-    }
+  // getToken(): any | null {
+  //   if (typeof window === 'undefined') {
+  //       console.warn('Window is undefined - running on server-side');
+  //       return null; // Environnement de serveur
+  //   }
 
-    const token = localStorage.getItem('token');
-    console.log('Retrieved token from local storage:', token);
+  //   const token = localStorage.getItem('token');
+  //   console.log('Retrieved token from local storage:', token);
 
-    if (!token) {
-        console.warn('No token found in local storage');
-        this.router.navigate(['/login']);
-        return null;
-    }
+  //   if (!token) {
+  //       console.warn('No token found in local storage');
+  //       this.router.navigate(['/login']);
+  //       return null;
+  //   }
 
-    // Vérifier si le token est expiré
-    if (this.isAccessTokenExpired(token)) {
-      console.log('le token est expire');
-        return this.refreshToken().pipe(
-            switchMap(():any => {
-                // Une fois le token rafraîchi, retourner le nouveau token
-                const newToken = localStorage.getItem('token');
-                console.log('le new token:', newToken);
-                if (!newToken) {
-                  this.router.navigate(['/login']); // Redirection si le nouveau token n'est pas trouvé
-                  return null;
-                }
-                console.log('new token:',newToken);
-                return of(newToken); // Retourner le nouveau token
-            }),
-            catchError((err):any => {
-                console.log('Error refreshing token:', err);
-                this.router.navigate(['/login']);
-                return null; // Retourner null en cas d'échec du rafraîchissement
-            })
-        );
-    }
-    console.log('Token is valid, returning existing token:',token);
-    return token; // Retourne le token existant s'il n'est pas expiré
+  //   // Vérifier si le token est expiré
+  //   if (this.isAccessTokenExpired(token)) {
+  //     console.log('le token est expire');
+  //       return this.refreshToken().pipe(
+  //           switchMap(():any => {
+  //               // Une fois le token rafraîchi, retourner le nouveau token
+  //               const newToken = localStorage.getItem('token');
+  //               console.log('le new token:', newToken);
+  //               if (!newToken) {
+  //                 this.router.navigate(['/login']); // Redirection si le nouveau token n'est pas trouvé
+  //                 return null;
+  //               }
+  //               console.log('new token:',newToken);
+  //               return of(newToken); // Retourner le nouveau token
+  //           }),
+  //           catchError((err):any => {
+  //               console.log('Error refreshing token:', err);
+  //               this.router.navigate(['/login']);
+  //               return null; // Retourner null en cas d'échec du rafraîchissement
+  //           })
+  //       );
+  //   }
+  //   console.log('Token is valid, returning existing token:',token);
+  //   return token; // Retourne le token existant s'il n'est pas expiré
+  // }
+
+  getToken(): string | null {
+    return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  }
+
+  getRefreshToken(): string | null {
+    return typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
   }
 
   isAccessTokenExpired(token: string): boolean {
@@ -96,18 +104,18 @@ export class ServiceApi {
     return Date.now() >= expirationTime; // Renvoie true si le token est expiré
 }
 
-  getRefreshToken(): string | null {
-    // return typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
-    if (typeof window === 'undefined') {
-        console.warn('Window is undefined - running on server-side');
-        return null; // Environnement de serveur
-    }
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (!refreshToken) {
-        console.warn('No refresh token found in local storage');
-    }
-    return refreshToken;
-  }
+  // getRefreshToken(): string | null {
+  //   // return typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+  //   if (typeof window === 'undefined') {
+  //       console.warn('Window is undefined - running on server-side');
+  //       return null; // Environnement de serveur
+  //   }
+  //   const refreshToken = localStorage.getItem('refresh_token');
+  //   if (!refreshToken) {
+  //       console.warn('No refresh token found in local storage');
+  //   }
+  //   return refreshToken;
+  // }
 
   refreshToken(): Observable<any> {
     const refreshToken = this.getRefreshToken();
@@ -154,7 +162,6 @@ export class ServiceApi {
   // USERS
   getUser(): Observable<any> {
     const token = this.getToken();
-    console.log('getUser - token:', token);
     if (!token) return throwError(() => new Error('No token found'));
 
     let decoded: any;
@@ -188,7 +195,6 @@ export class ServiceApi {
 
   getUsers(): Observable<any> {
     const token = this.getToken();
-    console.log('getUsers - token:', token);
     if (!token) {
       return throwError(() => new Error('No token found'));
     }
@@ -309,7 +315,6 @@ export class ServiceApi {
   // RIDES
   getRides(): Observable<any> {
     const token = this.getToken();
-    console.log('getRides - token:', token);
     if (!token) {
       return throwError(() => new Error('No token found'));
     }

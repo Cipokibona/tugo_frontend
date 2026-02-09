@@ -2,7 +2,10 @@
 
   <!-- Header -->
   <div class="d-flex align-items-center mb-4">
-    <button class="btn btn-light btn-sm rounded-circle me-2">
+    <button
+    class="btn btn-light btn-sm rounded-circle me-2"
+    (click)="goBack()"
+    >
       <i class="fa-solid fa-arrow-left"></i>
     </button>
     <h5 class="fw-bold mb-0">Create itinerary</h5>
@@ -11,7 +14,7 @@
   <!-- Form card -->
   <div class="card border-0 shadow-sm rounded-4 p-4 blackOrWhite">
 
-    <form>
+    <form [formGroup]="rideForm" (ngSubmit)="submit()">
 
       <!-- Departure -->
       <div class="mb-3">
@@ -24,6 +27,8 @@
             type="text"
             class="form-control border-start-0"
             placeholder="Departure city"
+            formControlName="from_city"
+            (blur)="loadRoute()"
             required
           >
         </div>
@@ -40,21 +45,36 @@
             type="text"
             class="form-control border-start-0"
             placeholder="Destination city"
+            formControlName="to_city"
+            (blur)="loadRoute()"
             required
           >
         </div>
       </div>
 
+      <!-- Map
+      <div class="mb-4">
+        <div id="map" class="map-container rounded-3"></div>
+      </div>-->
+
       <!-- Date & time -->
       <div class="row">
         <div class="col-6 mb-3">
           <label class="small fw-semibold mb-1">Date</label>
-          <input type="date" class="form-control form-control-sm" required>
+          <input
+          type="date"
+          class="form-control form-control-sm"
+          formControlName="departure_date"
+          required>
         </div>
 
         <div class="col-6 mb-3">
           <label class="small fw-semibold mb-1">Time</label>
-          <input type="time" class="form-control form-control-sm" required>
+          <input
+          type="time"
+          class="form-control form-control-sm"
+          formControlName="departure_time"
+          required>
         </div>
       </div>
 
@@ -71,6 +91,7 @@
               min="1"
               class="form-control border-start-0"
               placeholder="Seats"
+              formControlName="available_seats"
               required
             >
           </div>
@@ -86,6 +107,7 @@
               type="number"
               class="form-control border-start-0"
               placeholder="Price"
+              formControlName="price"
               required
             >
           </div>
@@ -102,6 +124,7 @@
           <input
             type="text"
             class="form-control border-start-0"
+            formControlName="vehicle"
             placeholder="Vehicle model"
           >
         </div>
@@ -114,14 +137,28 @@
           class="form-control form-control-sm"
           rows="3"
           placeholder="Meeting point, luggage, rules..."
+          formControlName="additional_info"
         ></textarea>
       </div>
 
       <!-- Submit -->
       <div class="d-grid">
-        <button type="submit" class="btn button principal rounded-pill py-2 col-6 mx-auto">
-          <i class="fa-solid fa-plus me-1"></i>
-          Publish
+        @if(errorMessage){
+          <div class="alert alert-danger mb-3" role="alert">
+            {{ errorMessage }}
+          </div>
+        }
+        <button
+        type="submit"
+        class="btn button principal rounded-pill py-2 col-6 mx-auto"
+        [disabled]="rideForm.invalid || loading">
+          @if(loading){
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Publishing...
+          } @else {
+            <i class="fa-solid fa-plus me-2"></i>
+            Publish ride
+          }
         </button>
       </div>
 

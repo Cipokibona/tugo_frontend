@@ -64,6 +64,7 @@ export class Home implements OnInit {
 
         this.applyRideFilter(); // 🔥
         this.loading = false;
+        console.log('Rides récupérés avec succès', this.rides);
       },
       error: (error: any) => {
         this.errorPage = error.detail;
