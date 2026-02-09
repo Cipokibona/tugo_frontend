@@ -1,9 +1,10 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject,Injectable } from '@angular/core';
-import { Observable, tap, throwError } from 'rxjs';
+import { Observable, of, tap, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { jwtDecode as jwt_decode } from 'jwt-decode';
 import { User } from '../models/user.model';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -28,7 +29,7 @@ export class ServiceApi {
   private conversationUrl = `${this.url}conversations/`;
   private messageUrl = `${this.url}messages/`;
 
-   constructor() { }
+   constructor(private router: Router) { }
 
   login(username: string, password: string) {
     return this.http.post<{ access: string; refresh: string }>(this.tokenUrl, { username, password })
@@ -53,27 +54,37 @@ export class ServiceApi {
     }
 
     const token = localStorage.getItem('token');
+    console.log('Retrieved token from local storage:', token);
 
     if (!token) {
         console.warn('No token found in local storage');
+        this.router.navigate(['/login']);
         return null;
     }
 
     // Vérifier si le token est expiré
     if (this.isAccessTokenExpired(token)) {
+      console.log('le token est expire');
         return this.refreshToken().pipe(
             switchMap(():any => {
                 // Une fois le token rafraîchi, retourner le nouveau token
                 const newToken = localStorage.getItem('token');
-                return newToken; // Retourner le nouveau token
+                console.log('le new token:', newToken);
+                if (!newToken) {
+                  this.router.navigate(['/login']); // Redirection si le nouveau token n'est pas trouvé
+                  return null;
+                }
+                console.log('new token:',newToken);
+                return of(newToken); // Retourner le nouveau token
             }),
             catchError((err):any => {
-                console.error('Error refreshing token:', err);
+                console.log('Error refreshing token:', err);
+                this.router.navigate(['/login']);
                 return null; // Retourner null en cas d'échec du rafraîchissement
             })
         );
     }
-
+    console.log('Token is valid, returning existing token:',token);
     return token; // Retourne le token existant s'il n'est pas expiré
   }
 
@@ -98,21 +109,38 @@ export class ServiceApi {
     return refreshToken;
   }
 
-  refreshToken(): Observable<void> {
-  const refreshToken = this.getRefreshToken();
-  if (!refreshToken) return throwError(() => new Error('No refresh token found'));
+  refreshToken(): Observable<any> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+        this.router.navigate(['/login']); // Redirection si pas de token
+        return throwError(() => new Error('No refresh token found'));
+      }
 
-  return this.http.post<{ access: string }>(`${this.url}token/refresh/`, { refresh: refreshToken }).pipe(
-    tap(response => {
-      localStorage.setItem('token', response.access);
-    }),
-    map(() => {}),
-    catchError(err => {
-      console.error('Error refreshing token:', err);
-      return throwError(() => new Error('Error refreshing token'));
+      console.log('refreshToken:',refreshToken);
+    // return this.http.post<{ access: string }>(`${this.refreshUrl}`, { refresh: refreshToken }).pipe(
+    //   tap(response => {
+    //     console.log('Response from refresh token API:', response);
+    //     localStorage.setItem('token', response.access);
+    //   }),
+    //   map(() => {}),
+    //   catchError(err => {
+    //     console.error('Error refreshing token:', err);
+    //     this.router.navigate(['/login']);
+    //     return throwError(() => new Error('Error refreshing token'));
+    //   })
+    // );
+    return this.http.post<{ access: string }>(this.refreshUrl, { refresh: refreshToken })
+    .pipe(tap(response => {
+      this.token = response.access;
+      localStorage.setItem('token', this.token);
+      console.log('Token refreshed successfully:', response.access);
+    }),catchError(err => {
+        console.error('Error refreshing token:', err);
+        this.router.navigate(['/login']); // Redirigez vers la page de connexion si l'erreur se produit
+        return throwError(() => new Error('Error refreshing token'));
     })
   );
-}
+  }
 
   // getTotal():Observable<any> {
   //   const token = this.getToken();
@@ -125,40 +153,42 @@ export class ServiceApi {
 
   // USERS
   getUser(): Observable<any> {
-  const token = this.getToken();
-  if (!token) return throwError(() => new Error('No token found'));
+    const token = this.getToken();
+    console.log('getUser - token:', token);
+    if (!token) return throwError(() => new Error('No token found'));
 
-  let decoded: any;
-  try {
-    decoded = jwt_decode(token);
-  } catch {
-    return throwError(() => new Error('Invalid token'));
+    let decoded: any;
+    try {
+      decoded = jwt_decode(token);
+    } catch (error) {
+      return throwError(() => new Error('Invalid token'));
+    }
+
+    const userId = decoded.user_id; // ou selon le champ de ton token
+    if (!userId) return throwError(() => new Error('User ID not found in token'));
+
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+
+    return this.http.get(`${this.userUrl}${userId}/`, { headers }).pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          return this.refreshToken().pipe(
+            switchMap(() => {
+              const newToken = this.getToken();
+              if (!newToken) return throwError(() => new Error('Token refresh failed'));
+              const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
+              return this.http.get(`${this.userUrl}${userId}/`, { headers: newHeaders });
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
   }
-
-  const userId = decoded.user_id; // ou selon le champ de ton token
-  if (!userId) return throwError(() => new Error('User ID not found in token'));
-
-  const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-
-  return this.http.get(`${this.userUrl}${userId}/`, { headers }).pipe(
-    catchError(error => {
-      if (error.status === 401) {
-        return this.refreshToken().pipe(
-          switchMap(() => {
-            const newToken = this.getToken();
-            if (!newToken) return throwError(() => new Error('Token refresh failed'));
-            const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
-            return this.http.get(`${this.userUrl}${userId}/`, { headers: newHeaders });
-          })
-        );
-      }
-      return throwError(() => error);
-    })
-  );
-}
 
   getUsers(): Observable<any> {
     const token = this.getToken();
+    console.log('getUsers - token:', token);
     if (!token) {
       return throwError(() => new Error('No token found'));
     }
@@ -167,23 +197,8 @@ export class ServiceApi {
   }
 
   createUser(data: any): Observable<any> {
-    const token = this.getToken();
-    if (!token) {
-      return throwError(() => new Error('No token found'));
-    }
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-    return this.http.post<any>(this.registerUrl, data, { headers }).pipe(
+     return this.http.post<any>(this.registerUrl, data).pipe(
       catchError(error => {
-        if (error.status === 401) {
-          return this.refreshToken().pipe(
-            switchMap(() => {
-              const newToken = this.getToken();
-              if (!newToken) return throwError(() => new Error('Token refresh failed'));
-              const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
-              return this.http.post<any>(this.registerUrl, data, { headers: newHeaders });
-            })
-          );
-        }
         return throwError(() => error);
       })
     );
@@ -274,7 +289,7 @@ export class ServiceApi {
       return throwError(() => new Error('No token found'));
     }
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-    return this.http.put<any>(`${this.driverUrl}${driveId}/`, data, { headers }).pipe(
+    return this.http.patch<any>(`${this.driverUrl}${driveId}/`, data, { headers }).pipe(
       catchError(error => {
         if (error.status === 401) {
           return this.refreshToken().pipe(
@@ -282,7 +297,7 @@ export class ServiceApi {
               const newToken = this.getToken();
               if (!newToken) return throwError(() => new Error('Token refresh failed'));
               const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
-              return this.http.put<any>(`${this.driverUrl}${driveId}/`, data, { headers: newHeaders });
+              return this.http.patch<any>(`${this.driverUrl}${driveId}/`, data, { headers: newHeaders });
             })
           );
         }
@@ -294,7 +309,7 @@ export class ServiceApi {
   // RIDES
   getRides(): Observable<any> {
     const token = this.getToken();
-    console.log('Retrieved token:', token);
+    console.log('getRides - token:', token);
     if (!token) {
       return throwError(() => new Error('No token found'));
     }

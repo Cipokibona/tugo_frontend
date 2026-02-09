@@ -20,7 +20,8 @@ export const routes: Routes = [
   },
   {
     path: 'sign-up',
-    component: SignUp
+    component: SignUp,
+    data: { hideNav: true }
   },
   {
     path: 'home',

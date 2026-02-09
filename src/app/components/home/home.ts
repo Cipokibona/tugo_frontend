@@ -32,8 +32,8 @@ export class Home implements OnInit {
   constructor(private service: ServiceApi, private router: Router) {}
 
   ngOnInit() {
-    this.getRides();
     this.getUser();
+    this.getRides();
   }
 
   transform(data: string) : string {

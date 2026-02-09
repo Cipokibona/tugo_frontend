@@ -11,7 +11,7 @@
       </div>
 
       <!-- Form -->
-      <form>
+      <form [formGroup]="registerForm" (ngSubmit)="submit()">
 
         <!-- Full name -->
         <div class="mb-3">
@@ -23,21 +23,7 @@
               type="text"
               class="form-control border-start-0"
               placeholder="Full name"
-              required
-            >
-          </div>
-        </div>
-
-        <!-- Email -->
-        <div class="mb-3">
-          <div class="input-group input-group-sm">
-            <span class="input-group-text bg-transparent border-end-0">
-              <i class="bi bi-envelope"></i>
-            </span>
-            <input
-              type="email"
-              class="form-control border-start-0"
-              placeholder="Email address"
+              formControlName="firstname"
               required
             >
           </div>
@@ -53,6 +39,24 @@
               type="tel"
               class="form-control border-start-0"
               placeholder="Phone number"
+              formControlName="contact_number"
+              required
+            >
+          </div>
+        </div>
+
+        <!-- contact -->
+        <div class="mb-3">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-transparent border-end-0">
+              <i class="bi bi-envelope"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control border-start-0"
+              placeholder="Username"
+              formControlName="username"
+              required
             >
           </div>
         </div>
@@ -67,6 +71,7 @@
               type="password"
               class="form-control border-start-0"
               placeholder="Password"
+              formControlName="password"
               required
             >
           </div>
@@ -82,17 +87,32 @@
               type="password"
               class="form-control border-start-0"
               placeholder="Confirm password"
+              formControlName="confirmPassword"
               required
             >
           </div>
         </div>
+        @if(errorMessage){
+          <div class="alert alert-danger text-center py-2 mt-3">
+            {{errorMessage}}
+          </div>
+        }
+
 
         <!-- Submit -->
         <div class="d-grid gap-2">
-          <button type="submit" class="btn button principal btn-sm rounded-pill py-2 fw-semibold col-6 mx-auto">
-            Create account
+          <button
+            type="submit"
+            class="btn button principal btn-sm rounded-pill py-2 fw-semibold col-6 mx-auto"
+            [disabled]="loading || registerForm.invalid"
+            >
+            {{ loading ? 'Creating account...' : 'Create account' }}
           </button>
-          <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill py-2 fw-semibold col-6 mx-auto">
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm rounded-pill py-2 fw-semibold col-6 mx-auto"
+            (click)="cancel()"
+            >
             Cancel
           </button>
         </div>
