@@ -148,6 +148,19 @@ export class FormTrip implements OnInit {
   submit() {
     if (this.rideForm.invalid) return;
 
+    const departureDate = this.rideForm.value.departure_date;
+    const departureTime = this.rideForm.value.departure_time;
+
+    // Construire une vraie date complète (date + heure)
+    const departureDateTime = new Date(`${departureDate}T${departureTime}`);
+    const now = new Date();
+
+    // Vérifier si le temps de départ est déjà passé
+    if (departureDateTime <= now) {
+      this.errorMessage = 'Impossible de créer un ride : l’heure de départ est déjà dépassée.';
+      return;
+    }
+
     this.loading = true;
 
     // Envoyer la route choisie au backend

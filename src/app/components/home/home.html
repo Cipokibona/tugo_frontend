@@ -118,7 +118,7 @@
           <!-- Footer -->
           <div class="d-flex justify-content-between align-items-center">
             <span class="fw-bold principal">
-              {{ride.price | number : '1.0-0' }} BIF
+              {{prixFinal(ride.price) | number : '1.0-0' }} BIF
             </span>
             @if(!isMyRide(ride)){
               <button class="btn button principal btn-sm rounded-pill">

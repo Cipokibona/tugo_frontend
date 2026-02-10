@@ -104,9 +104,17 @@ applyRideFilter() {
   }
 }
 
-isMyRide(ride: any): boolean {
-  return this.user && ride.driver === this.user.id;
-}
+  isMyRide(ride: any): boolean {
+    return this.user && ride.driver === this.user.id;
+  }
 
+  prixFinal(prix: number): number{
+    const TVA = 0.18; // 18% de TVA
+    const commissionRate = 0.10; // 10% de commission
 
+    const commission = prix * commissionRate;
+    const tvaSurCommission = commission * TVA;
+
+    return prix + commission + tvaSurCommission;
+  }
 }
