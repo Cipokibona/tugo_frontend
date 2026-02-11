@@ -87,8 +87,8 @@ export class FormTrip implements OnInit {
       departure_time: ['', Validators.required],
       price: [0, Validators.required],
       available_seats: [1, Validators.required],
-      vehicle: ['', Validators.required],
-      additional_info: ['']
+      vehicule: ['', Validators.required],
+      note: ['']
     });
   }
 
