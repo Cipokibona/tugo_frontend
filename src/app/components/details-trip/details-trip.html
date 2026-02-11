@@ -1,4 +1,4 @@
-<div class="container-fluid background min-vh-100 p-3 pb-3">
+<div class="container-fluid background min-vh-100 p-3">
 
   <!-- Header -->
   <div class="d-flex align-items-center mb-3">
@@ -132,17 +132,105 @@
           }} BIF
         </div>
       </div>
+      <!-- Warning message -->
+      <small class="text-warning">
+        ⚠️ You can cancel your booking only 30 minutes before departure.
+      </small>
       <div class="d-flex gap-2 flex-grow-1 min-w-100 min-w-sm-auto">
         <button class="btn btn-outline-secondary rounded-pill px-4">
           Cancel
         </button>
         <button
         class="btn button principal rounded-pill px-4"
-        [disabled]="seatsLeft <= 0">
-          Book now
+        [disabled]="seatsLeft <= 0 || !selectedSeats"
+        (click)="bookRide()">
+          @if(!loadingBooking) {
+            Book now
+          }
+
+          @if(loadingBooking) {
+            <i class="spinner-border spinner-border-sm me-2"></i>
+            Booking...
+          }
         </button>
       </div>
     </div>
   </div>
 }
 </div>
+
+@if(showInvoice) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content rounded-4 p-4">
+
+        <!-- Header avec logo et date -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div class="d-flex align-items-center">
+            <img src="/logo_tugo.svg" alt="Tugo" style="width: 4rem; height:auto;" class="me-3">
+            <h5 class="modal-title fw-bold mb-0">Facture</h5>
+          </div>
+          <div class="text-muted small">
+            Date: {{ today | date:'dd MMM yyyy, HH:mm' }}
+          </div>
+          <button type="button" class="btn-close ms-3" (click)="showInvoice = false"></button>
+        </div>
+
+        <hr>
+
+        <!-- Détails de la réservation -->
+        <div class="modal-body">
+          <div class="row mb-2">
+            <div class="col-6">
+              <strong>Passenger:</strong> {{ invoiceData.passenger }}
+            </div>
+            <div class="col-6">
+              <strong>Seats reserved:</strong> {{ invoiceData.seats }}
+            </div>
+          </div>
+
+          <div class="row mb-2">
+            <div class="col-6">
+              <strong>Ride:</strong> {{ invoiceData.ride.from_city }} → {{ invoiceData.ride.to_city }}
+            </div>
+            <div class="col-6">
+              <strong>Departure:</strong> {{ invoiceData.ride.departure_date | date:'dd MMM yyyy' }} at {{ invoiceData.ride.departure_time }}
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-6">
+              <strong>Price / seat:</strong> {{ invoiceData.pricePerSeat | number:'1.2-2' }} BIF
+            </div>
+            <div class="col-6 text-end">
+              <strong class="fs-5 principal">Total: {{ invoiceData.total | number:'1.2-2' }} BIF</strong>
+            </div>
+          </div>
+
+          <div class="alert alert-warning small text-center mb-3">
+            ⚠️ Please be on time for your ride.<br>
+            🙏 Thank you for choosing Tugo!
+          </div>
+
+        </div>
+
+        <hr>
+
+        <!-- Footer avec actions -->
+        <div class="modal-footer border-0 justify-content-between">
+          <button class="btn btn-outline-secondary rounded-pill px-4" (click)="showInvoice = false">
+            Close
+          </button>
+
+          <button class="btn button principal rounded-pill px-4" (click)="downloadInvoice()">
+            <i class="fa fa-download me-2"></i> Download PDF
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+}
+
+
+
