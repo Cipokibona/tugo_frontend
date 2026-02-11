@@ -173,7 +173,7 @@
           <div class="text-muted small">
             Date: {{ today | date:'dd MMM yyyy, HH:mm' }}
           </div>
-          <button type="button" class="btn-close ms-3" (click)="showInvoice = false"></button>
+          <button type="button" class="btn-close ms-3" (click)="goHome()"></button>
         </div>
 
         <hr>
@@ -218,7 +218,7 @@
 
         <!-- Footer avec actions -->
         <div class="modal-footer border-0 justify-content-between">
-          <button class="btn btn-outline-secondary rounded-pill px-4" (click)="showInvoice = false">
+          <button class="btn btn-outline-secondary rounded-pill px-4" (click)="goHome()">
             Close
           </button>
 

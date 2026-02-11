@@ -150,6 +150,11 @@ export class DetailsTrip implements OnInit{
     });
   }
 
+  goHome() {
+    this.showInvoice = false; // ferme la modal si besoin
+    this.router.navigate(['/home']); // redirige vers la home
+  }
+
   downloadInvoice() {
     if (!this.invoiceData) return;
 
