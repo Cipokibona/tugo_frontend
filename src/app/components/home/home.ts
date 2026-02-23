@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ServiceApi } from '../../services/service-api';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -34,11 +35,52 @@ export class Home implements OnInit {
     date: null,
   };
 
-  constructor(private service: ServiceApi) {}
+  constructor(private service: ServiceApi, private router: Router) {}
 
   ngOnInit() {
-    this.getUser();
-    this.getRides();
+    // this.getUser();
+    // this.getRides();
+    this.loadInitialData();
+  }
+
+  loadInitialData() {
+    this.loading = true;
+    this.loadingBookings = true;
+
+    forkJoin({
+      user: this.service.getUser(),
+      rides: this.service.getRides(),
+      bookings: this.service.getBookings()
+    }).subscribe({
+      next: ({ user, rides, bookings }) => {
+
+        // ✅ user
+        this.user = user;
+
+        // ✅ rides
+        this.filteredRides = rides || [];
+        this.rides = this.filteredRides.filter(r => r.status === 'OPEN');
+
+        // ✅ bookings
+        this.bookings = bookings || [];
+
+        // ✅ mapping seulement quand tout est prêt
+        this.mapUserBookingsToRides();
+        this.applyRideFilter();
+
+        this.loading = false;
+        this.loadingBookings = false;
+      },
+      error: (error) => {
+        if (error?.status === 401) {
+          this.router.navigate(['/login']);
+          return;
+        }
+        this.errorPage = error?.detail || 'Error loading page';
+        this.loading = false;
+        this.loadingBookings = false;
+      }
+    });
   }
 
   transform(data: string): string {
@@ -53,7 +95,13 @@ export class Home implements OnInit {
         this.applyRideFilter();
         this.getBookingsForCurrentUser();
       },
-      error: err => console.log("erreur pour l'utilisateur connecte", err)
+      error: err => {
+        if (err?.status === 401) {
+          this.router.navigate(['/login']);
+          return;
+        }
+        console.log("erreur pour l'utilisateur connecte", err);
+      }
     });
   }
 
@@ -101,12 +149,16 @@ export class Home implements OnInit {
     }
 
     const ridesById = new Map(this.filteredRides.map(ride => [ride.id, ride]));
+
     this.userBookings = this.bookings
-      .filter(booking => booking.passenger === this.user.id)
+      .filter(booking => booking.passenger === this.user.id && booking.status !== 'CLOSED')
       .map(booking => ({
         ...booking,
         rideData: ridesById.get(booking.ride) || null,
       }));
+
+    // ✅ Log après avoir construit userBookings
+    console.log('userBookings', this.userBookings);
   }
 
   applyRideFilter() {

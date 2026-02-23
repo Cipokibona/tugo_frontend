@@ -1,65 +1,48 @@
 <div class="container-fluid background min-vh-100 p-3">
 
-  <!-- Header -->
   <div class="d-flex align-items-center mb-3">
     <button
-    class="btn btn-light btn-sm rounded-circle me-2"
-    (click)="goBack()"
+      class="btn btn-light btn-sm rounded-circle me-2"
+      (click)="goBack()"
     >
       <i class="fa fa-arrow-left"></i>
     </button>
     <h5 class="fw-bold mb-0">Ride details</h5>
   </div>
 
-  <!-- Map
-  <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
-    <div class="map-placeholder">
-      <span class="text-muted small">Map preview</span>
-    </div>
-  </div>-->
-
-  <!-- Route info -->
   <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
     <div class="mb-2">
-      <span class="fw-bold">
-        {{ride?.from_city}}
-      </span>
+      <span class="fw-bold">{{ ride?.from_city }}</span>
       <i class="fas fa-arrow-right mx-2"></i>
-      <span class="fw-bold">
-        {{ride?.to_city}}
-      </span>
+      <span class="fw-bold">{{ ride?.to_city }}</span>
     </div>
 
     <div class="row small text-muted">
       <div class="col-6">
-        <i class="bi bi-calendar"></i> {{ride?.departure_date | date:'dd MMM yyyy'}}
+        <i class="bi bi-calendar"></i> {{ ride?.departure_date | date:'dd MMM yyyy' }}
       </div>
       <div class="col-6">
-        <i class="bi bi-clock"></i> {{ride?.departure_time}}
+        <i class="bi bi-clock"></i> {{ ride?.departure_time }}
       </div>
       <div class="col-6 mt-2">
         <i class="bi bi-geo-alt"></i>
         {{ ride?.distance_km ? (ride.distance_km + ' km') : 'Distance inconnue' }}
       </div>
       <div class="col-6 mt-2">
-        <i class="bi bi-people"></i> {{
-          ((ride?.available_seats || 0) - (bookings?.length || 0))
-        }} seats left
+        <i class="bi bi-people"></i>
+        {{ ((ride?.available_seats || 0) - (bookings.length || 0)) }} seats left
       </div>
     </div>
   </div>
 
-  <!-- Driver -->
   <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
     <div class="d-flex align-items-center">
       <div class="avatar me-3">
         {{ ride?.driver_username?.charAt(0)?.toUpperCase() }}
       </div>
       <div class="flex-grow-1">
-        <div class="fw-semibold">
-          {{ride?.driver_username}}
-        </div>
-        <div class="text-muted small">⭐ {{ride?.drive_rating}}</div>
+        <div class="fw-semibold">{{ ride?.driver_username }}</div>
+        <div class="text-muted small"> ⭐ {{ ride?.drive_rating }}</div>
       </div>
       <a [routerLink]="['/chat', ride?.id]" class="btn btn-outline-info btn-sm rounded-pill">
         <i class="fa fa-comment mx-1"></i>
@@ -68,7 +51,6 @@
     </div>
   </div>
 
-  <!-- Notes -->
   <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
     <h6 class="fw-semibold mb-2">Additional info</h6>
     <p class="small text-muted mb-1">
@@ -76,21 +58,19 @@
       {{ ride?.vehicule || 'Not specified' }}
     </p>
     <p class="small text-muted mb-0">
-      {{ride?.note || 'No additional information provided by the driver.'}}
+      {{ ride?.note || 'No additional information provided by the driver.' }}
     </p>
+
     @if(isDriver()) {
       <hr>
 
       <p class="small mb-1">
-        <strong>Bookings:</strong> {{ bookings?.length || 0 }} in {{ ride?.available_seats || 0 }} seats
+        <strong>Bookings:</strong> {{ bookings.length || 0 }} in {{ ride?.available_seats || 0 }} seats
       </p>
 
       <p class="small mb-3">
         <strong>Total earned:</strong>
-        {{
-          ((bookings?.length || 0) * (ride?.price || 0))
-          | number:'1.2-2'
-        }} BIF
+        {{ ((bookings.length || 0) * (ride?.price || 0)) | number:'1.2-2' }} BIF
       </p>
 
       @if(ride?.status === 'CANCELLED') {
@@ -116,64 +96,76 @@
     <div class="alert alert-danger py-2 small">{{ errorMessage }}</div>
   }
 
+  @let seatsLeft = ((ride?.available_seats || 0) - (bookings.length || 0));
 
-@let seatsLeft = ((ride?.available_seats || 0) - (bookings?.length || 0));
-
-@if(!isDriver()){
-  <!-- Bottom booking bar -->
-  <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-      <div class="flex-grow-1 min-w-100 min-w-sm-auto">
-        <div class="small text-muted">Price / seat</div>
-        <div class="fw-bold fs-5 principal">
-          {{prixFinal(ride?.price) | number:'1.2-2'}} BIF
+  @if(!isDriver()) {
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="flex-grow-1 min-w-100 min-w-sm-auto">
+          <div class="small text-muted">Price / seat</div>
+          <div class="fw-bold fs-5 principal">
+            {{ prixFinal(ride?.price) | number:'1.2-2' }} BIF
+          </div>
         </div>
-      </div>
-      <!-- Choix du nombre de places -->
-      <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-100 min-w-sm-auto">
-        <span class="small text-muted">Seats:</span>
-        <select class="form-select form-select-sm w-auto" [(ngModel)]="selectedSeats">
-          @for (n of [].constructor(seatsLeft); track $index) {
-            <option [value]="$index + 1">{{ $index + 1 }}</option>
-          }
-        </select>
-      </div>
 
-      <!-- Total -->
-      <div class="flex-grow-1 min-w-100 min-w-sm-auto">
-        <div class="small text-muted">Total</div>
-        <div class="fw-bold">
-          {{
-            ((selectedSeats || 1) * (prixFinal(ride?.price) || 0))
-            | number:'1.2-2'
-          }} BIF
+        <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-100 min-w-sm-auto">
+          <span class="small text-muted">Seats:</span>
+          <select class="form-select form-select-sm w-auto" [(ngModel)]="selectedSeats">
+            @for (n of [].constructor(seatsLeft); track $index) {
+              <option [value]="$index + 1">{{ $index + 1 }}</option>
+            }
+          </select>
         </div>
-      </div>
-      <!-- Warning message -->
-      <small class="text-warning">
-        ⚠️ You can cancel your booking only 30 minutes before departure.
-      </small>
-      <div class="d-flex gap-2 flex-grow-1 min-w-100 min-w-sm-auto">
-        <button class="btn btn-outline-secondary rounded-pill px-4">
-          Cancel
-        </button>
-        <button
-        class="btn button principal rounded-pill px-4"
-        [disabled]="seatsLeft <= 0 || !selectedSeats"
-        (click)="bookRide()">
-          @if(!loadingBooking) {
-            Book now
-          }
 
-          @if(loadingBooking) {
-            <i class="spinner-border spinner-border-sm me-2"></i>
-            Booking...
-          }
-        </button>
+        <div class="flex-grow-1 min-w-100 min-w-sm-auto">
+          <div class="small text-muted">Total</div>
+          <div class="fw-bold">
+            {{ ((selectedSeats || 1) * (prixFinal(ride?.price) || 0)) | number:'1.2-2' }} BIF
+          </div>
+        </div>
+
+        <small class="text-warning">
+          You can cancel your booking only 30 minutes before departure.
+        </small>
+
+        @if(userBookedSeatsCount > 0) {
+          <small class="text-muted">
+            You have booked <strong>{{ userBookedSeatsCount }}</strong> seat(s) on this ride.
+          </small>
+        }
+
+        <div class="d-flex gap-2 flex-grow-1 min-w-100 min-w-sm-auto">
+          <button
+            class="btn btn-outline-secondary rounded-pill px-4"
+            [disabled]="userBookedSeatsCount === 0 || cancellingBooking"
+            (click)="cancelMyBookings()"
+          >
+            @if(!cancellingBooking) {
+              Cancel booking
+            } @else {
+              <i class="spinner-border spinner-border-sm me-2"></i>
+              Cancelling...
+            }
+          </button>
+
+          <button
+            class="btn button principal rounded-pill px-4"
+            [disabled]="seatsLeft <= 0 || !selectedSeats"
+            (click)="bookRide()"
+          >
+            @if(!loadingBooking) {
+              Book now
+            }
+
+            @if(loadingBooking) {
+              <i class="spinner-border spinner-border-sm me-2"></i>
+              Booking...
+            }
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-}
+  }
 </div>
 
 @if(showInvoice) {
@@ -181,7 +173,6 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content rounded-4 p-4">
 
-        <!-- Header avec logo et date -->
         <div class="d-flex align-items-center justify-content-between mb-3">
           <div class="d-flex align-items-center">
             <img src="/logo_tugo.svg" alt="Tugo" style="width: 4rem; height:auto;" class="me-3">
@@ -195,7 +186,6 @@
 
         <hr>
 
-        <!-- Détails de la réservation -->
         <div class="modal-body">
           <div class="row mb-2">
             <div class="col-6">
@@ -208,7 +198,7 @@
 
           <div class="row mb-2">
             <div class="col-6">
-              <strong>Ride:</strong> {{ invoiceData.ride.from_city }} → {{ invoiceData.ride.to_city }}
+              <strong>Ride:</strong> {{ invoiceData.ride.from_city }} -> {{ invoiceData.ride.to_city }}
             </div>
             <div class="col-6">
               <strong>Departure:</strong> {{ invoiceData.ride.departure_date | date:'dd MMM yyyy' }} at {{ invoiceData.ride.departure_time }}
@@ -225,15 +215,14 @@
           </div>
 
           <div class="alert alert-warning small text-center mb-3">
-            ⚠️ Please be on time for your ride.<br>
-            🙏 Thank you for choosing Tugo!
+            Please be on time for your ride.<br>
+            Thank you for choosing Tugo!
           </div>
 
         </div>
 
         <hr>
 
-        <!-- Footer avec actions -->
         <div class="modal-footer border-0 justify-content-between">
           <button class="btn btn-outline-secondary rounded-pill px-4" (click)="goHome()">
             Close
@@ -248,6 +237,3 @@
     </div>
   </div>
 }
-
-
-
