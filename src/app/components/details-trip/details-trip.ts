@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ServiceApi } from '../../services/service-api';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -8,7 +8,7 @@ import jsPDF from 'jspdf';
 
 @Component({
   selector: 'app-details-trip',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './details-trip.html',
   styleUrl: './details-trip.scss',
 })
@@ -20,6 +20,7 @@ export class DetailsTrip implements OnInit{
 
   loading = false;
   loadingBooking = false;
+  cancellingRide = false;
   errorPage: any | null = null;
   errorMessage: string | null = null;
 
@@ -100,6 +101,27 @@ export class DetailsTrip implements OnInit{
 
   isDriver(): boolean {
     return this.ride?.driver === this.user?.id;
+  }
+
+  cancelRide() {
+    if (!this.ride?.id || this.cancellingRide) return;
+
+    const confirmed = window.confirm('Are you sure you want to cancel this ride?');
+    if (!confirmed) return;
+
+    this.cancellingRide = true;
+    this.errorMessage = null;
+
+    this.service.cancelRide(this.ride.id).subscribe({
+      next: (updatedRide) => {
+        this.ride = updatedRide || { ...this.ride, status: 'CANCELLED' };
+        this.cancellingRide = false;
+      },
+      error: () => {
+        this.errorMessage = 'Unable to cancel this ride. Please try again.';
+        this.cancellingRide = false;
+      }
+    });
   }
 
   bookRide() {

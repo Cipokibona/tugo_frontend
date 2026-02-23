@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ServiceApi } from '../../services/service-api';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -15,10 +15,15 @@ export class Home implements OnInit {
   proposedRides: any[] = [];
   ridesOpen: any[] = [];
 
+  bookings: any[] = [];
+  userBookings: any[] = [];
+
   user: any | null = null;
 
   loading = false;
+  loadingBookings = false;
   errorPage: any | null = null;
+  bookingError: string | null = null;
 
   activeTab: 'ALL' | 'USER' | 'PROPOSED' = 'ALL';
 
@@ -29,88 +34,112 @@ export class Home implements OnInit {
     date: null,
   };
 
-  constructor(private service: ServiceApi, private router: Router) {}
+  constructor(private service: ServiceApi) {}
 
   ngOnInit() {
     this.getUser();
     this.getRides();
   }
 
-  transform(data: string) : string {
-    if (!data) return data; // Verifie si la donnée est vide ou null
+  transform(data: string): string {
+    if (!data) return data;
     return data.charAt(0).toUpperCase() + data.slice(1);
   }
 
-  getUser(){
+  getUser() {
     this.service.getUser().subscribe({
-      next:user=>{
-        this.user=user;
-        console.log("utilisateur connecte",this.user);
-        this.applyRideFilter(); //
+      next: user => {
+        this.user = user;
+        this.applyRideFilter();
+        this.getBookingsForCurrentUser();
       },
-      error: err =>console.log("erreur pour l'utilisateur connecte",err)
-    })
+      error: err => console.log("erreur pour l'utilisateur connecte", err)
+    });
   }
 
-  getRides(){
+  getRides() {
     this.loading = true;
     this.service.getRides().subscribe({
       next: (data: any[]) => {
-        // this.rides = data || [];
-
-        // uniquement les rides ouverts
         this.filteredRides = data || [];
         this.rides = this.filteredRides.filter(r => r.status === 'OPEN');
 
-        this.applyRideFilter(); // 🔥
+        this.applyRideFilter();
+        this.mapUserBookingsToRides();
         this.loading = false;
-        console.log('Rides récupérés avec succès', this.rides);
       },
       error: (error: any) => {
         this.errorPage = error.detail;
         this.loading = false;
-        console.error(error);
       }
     });
   }
 
-applyRideFilter() {
-  if (!this.user) {
-    // this.rides = this.filteredRides.filter(ride => ride.status === 'OPEN');
-    this.rides = [];
-    return;
+  getBookingsForCurrentUser() {
+    if (!this.user) return;
+
+    this.loadingBookings = true;
+    this.bookingError = null;
+
+    this.service.getBookings().subscribe({
+      next: (data: any[]) => {
+        this.bookings = data || [];
+        this.mapUserBookingsToRides();
+        this.loadingBookings = false;
+      },
+      error: (error: any) => {
+        this.bookingError = error?.detail || 'Unable to load your bookings';
+        this.loadingBookings = false;
+      }
+    });
   }
 
-  switch (this.activeTab) {
+  mapUserBookingsToRides() {
+    if (!this.user) {
+      this.userBookings = [];
+      return;
+    }
 
-    case 'USER':
-      // Mes rides
-      this.rides = this.filteredRides.filter(
-        ride => ride.driver === this.user.id
-      );
-      break;
-
-    case 'PROPOSED':
-      // Rides des autres
-      this.rides = this.filteredRides.filter(
-        ride => ride.status === 'PROPOSED'
-      );
-      break;
-
-    default:
-      // Tous
-      // this.rides = [...this.filteredRides];
-      this.rides = this.filteredRides.filter(ride => ride.status === 'OPEN');
+    const ridesById = new Map(this.filteredRides.map(ride => [ride.id, ride]));
+    this.userBookings = this.bookings
+      .filter(booking => booking.passenger === this.user.id)
+      .map(booking => ({
+        ...booking,
+        rideData: ridesById.get(booking.ride) || null,
+      }));
   }
-}
+
+  applyRideFilter() {
+    if (!this.user) {
+      this.rides = [];
+      return;
+    }
+
+    switch (this.activeTab) {
+      case 'USER':
+        this.rides = this.filteredRides.filter(
+          ride => ride.driver === this.user.id
+        );
+        break;
+
+      case 'PROPOSED':
+        this.rides = this.filteredRides.filter(
+          ride => ride.status === 'PROPOSED'
+        );
+        break;
+
+      default:
+        this.rides = this.filteredRides.filter(ride => ride.status === 'OPEN');
+    }
+  }
 
   isMyRide(ride: any): boolean {
     return this.user && ride.driver === this.user.id;
   }
 
-  prixFinal(prix: number): number{
-    const TVA = 0.18; // 18% de TVA
-    const commissionRate = 0.10; // 10% de commission
+  prixFinal(prix: number): number {
+    const TVA = 0.18;
+    const commissionRate = 0.10;
 
     const commission = prix * commissionRate;
     const tvaSurCommission = commission * TVA;

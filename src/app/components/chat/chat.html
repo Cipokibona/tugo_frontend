@@ -1,77 +1,57 @@
 <div class="container-fluid chat-container p-0">
 
-  <!-- Header -->
   <div class="chat-header d-flex align-items-center px-3 py-2 shadow-sm">
-    <button class="btn btn-light btn-sm rounded-circle me-2">
+    <button class="btn btn-light btn-sm rounded-circle me-2" (click)="goBack()">
       <i class="fa fa-arrow-left"></i>
     </button>
 
-    <div class="avatar me-2">J</div>
+    <div class="avatar me-2">{{ user?.username?.charAt(0)?.toUpperCase() || 'U' }}</div>
 
     <div class="flex-grow-1">
-      <div class="fw-semibold">Jean Claude</div>
-      <div class="text-success small">Online</div>
+      <div class="fw-semibold">Conversation #{{ conversationId || '-' }}</div>
+      <div class="text-success small">Messages</div>
     </div>
-
-    <button class="btn btn-light btn-sm rounded-circle">
-      <i class="fa-solid fa-phone"></i>
-    </button>
   </div>
 
-  <!-- Messages -->
   <div class="chat-body px-3 py-3">
-
-    <!-- Message driver -->
-    <div class="message received">
-      <div class="bubble">
-        Hello 👋 I will leave on time.
-      </div>
-      <div class="time">08:20</div>
-    </div>
-
-    <!-- Message user -->
-    <div class="message sent">
-      <div class="bubble">
-        Great! Where is the exact meeting point?
-      </div>
-      <div class="time ">
-        08:21
-        <i class="fa-solid fa-check text-muted"></i>
-      </div>
-    </div>
-
-    <!-- Message driver -->
-    <div class="message received">
-      <div class="bubble">
-        Near the main bus station.
-      </div>
-      <div class="time">08:22</div>
-    </div>
-
+    @if(loadingMessages){
+      <div class="small text-muted">Loading messages...</div>
+    } @else if (errorMessage) {
+      <div class="small text-danger">{{ errorMessage }}</div>
+    } @else if (messages.length === 0) {
+      <div class="small text-muted">No messages in this conversation yet.</div>
+    } @else {
+      @for(message of messages; track message.id) {
+        <div class="message" [class.sent]="isSentByMe(message)" [class.received]="!isSentByMe(message)">
+          <div class="bubble">
+            {{ messageContent(message) }}
+          </div>
+          <div class="time">
+            {{ messageTime(message) }}
+          </div>
+        </div>
+      }
+    }
   </div>
 
-  <div class="message received typing">
-    <div class="bubble">
-      <span class="dot"></span>
-      <span class="dot"></span>
-      <span class="dot"></span>
-    </div>
-  </div>
-
-  <!-- Input -->
   <div class="chat-input d-flex align-items-center px-2 py-2 shadow-lg">
-
-    <button
-    class="btn btn-light btn-sm rounded-circle me-2">
-    <i class="fa-solid fa-microphone"></i>
-  </button>
     <input
       type="text"
       class="form-control form-control-sm rounded-pill me-2"
       placeholder="Type a message..."
+      [(ngModel)]="messageText"
+      (keyup.enter)="sendMessage()"
     >
-    <button class="btn button principal btn-sm rounded-circle">
-      <i class="fa-solid fa-paper-plane"></i>
+    <button
+      class="btn button principal btn-sm rounded-circle"
+      [disabled]="sendingMessage || !messageText.trim() || !conversationId"
+      (click)="sendMessage()"
+    >
+      @if(!sendingMessage){
+        <i class="fa-solid fa-paper-plane"></i>
+      } @else {
+        <i class="spinner-border spinner-border-sm"></i>
+      }
     </button>
   </div>
 

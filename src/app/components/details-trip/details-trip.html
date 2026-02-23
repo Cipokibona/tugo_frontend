@@ -61,7 +61,7 @@
         </div>
         <div class="text-muted small">⭐ {{ride?.drive_rating}}</div>
       </div>
-      <a href="/chat/1" class="btn btn-outline-info btn-sm rounded-pill">
+      <a [routerLink]="['/chat', ride?.id]" class="btn btn-outline-info btn-sm rounded-pill">
         <i class="fa fa-comment mx-1"></i>
         <span class="fw-bold">Chat</span>
       </a>
@@ -93,11 +93,28 @@
         }} BIF
       </p>
 
-      <button class="btn btn-outline-danger rounded-pill px-4">
-        Cancel ride
-      </button>
+      @if(ride?.status === 'CANCELLED') {
+        <span class="badge text-bg-danger">Ride cancelled</span>
+      } @else {
+        <button
+          class="btn btn-outline-danger rounded-pill px-4"
+          [disabled]="cancellingRide"
+          (click)="cancelRide()"
+        >
+          @if(!cancellingRide) {
+            Cancel ride
+          } @else {
+            <i class="spinner-border spinner-border-sm me-2"></i>
+            Cancelling...
+          }
+        </button>
+      }
     }
   </div>
+
+  @if(errorMessage) {
+    <div class="alert alert-danger py-2 small">{{ errorMessage }}</div>
+  }
 
 
 @let seatsLeft = ((ride?.available_seats || 0) - (bookings?.length || 0));
