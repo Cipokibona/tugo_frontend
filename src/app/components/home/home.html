@@ -70,55 +70,57 @@
   </div>
 
 
-  <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 blackOrWhite">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="fw-bold mb-0">My bookings</h6>
-      <span class="badge text-bg-light">{{ userBookings.length }}</span>
-    </div>
+  @if(activeTab === 'USER'){
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 blackOrWhite">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold mb-0">My bookings</h6>
+        <span class="badge text-bg-light">{{ userBookings.length }}</span>
+      </div>
 
-    @if(loadingBookings){
-      <div class="small text-muted">Loading your bookings...</div>
-    } @else if (bookingError) {
-      <div class="small text-danger">{{ bookingError }}</div>
-    } @else if (userBookings.length === 0) {
-      <div class="small text-muted">You do not have a booking yet.</div>
-    } @else {
-      <div class="row g-2">
-        @for (booking of userBookings; track booking.id) {
-          <div class="col-12 col-lg-6">
-            <div class="booking-item border rounded-3 p-2">
-              <div class="fw-semibold small mb-1">
-                {{ booking.rideData?.from_city || 'Unknown city' }}
-                <i class="bi bi-arrow-right mx-1"></i>
-                {{ booking.rideData?.to_city || 'Unknown city' }}
-              </div>
-              <div class="text-muted small mb-2">
-                {{ booking.rideData?.departure_date | date:'dd MMM yyyy' }}
-                -
-                {{ booking.rideData?.departure_time || '--:--' }}
-              </div>
-              <div class="d-flex justify-content-between align-items-center">
-                <span
-                  class="badge"
-                  [ngClass]="{
-                    'text-bg-success': booking.status === 'CONFIRMED',
-                    'text-bg-danger': booking.status === 'CANCELLED',
-                    'text-bg-secondary': booking.status !== 'CONFIRMED' && booking.status !== 'CANCELLED'
-                  }">
-                  {{ booking.status }}
-                </span>
-                @if(booking.rideData?.id){
-                  <a [routerLink]="['/details-trip', booking.rideData.id]" class="btn btn-sm btn-outline-secondary rounded-pill">
-                    View trip
-                  </a>
-                }
+      @if(loadingBookings){
+        <div class="small text-muted">Loading your bookings...</div>
+      } @else if (bookingError) {
+        <div class="small text-danger">{{ bookingError }}</div>
+      } @else if (userBookings.length === 0) {
+        <div class="small text-muted">You do not have a booking yet.</div>
+      } @else {
+        <div class="row g-2">
+          @for (booking of userBookings; track booking.id) {
+            <div class="col-12 col-lg-6">
+              <div class="booking-item border rounded-3 p-2">
+                <div class="fw-semibold small mb-1">
+                  {{ booking.rideData?.from_city || 'Unknown city' }}
+                  <i class="bi bi-arrow-right mx-1"></i>
+                  {{ booking.rideData?.to_city || 'Unknown city' }}
+                </div>
+                <div class="text-muted small mb-2">
+                  {{ booking.rideData?.departure_date | date:'dd MMM yyyy' }}
+                  -
+                  {{ booking.rideData?.departure_time || '--:--' }}
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span
+                    class="badge"
+                    [ngClass]="{
+                      'text-bg-success': booking.status === 'CONFIRMED',
+                      'text-bg-danger': booking.status === 'CANCELLED',
+                      'text-bg-secondary': booking.status !== 'CONFIRMED' && booking.status !== 'CANCELLED'
+                    }">
+                    {{ booking.status }}
+                  </span>
+                  @if(booking.rideData?.id){
+                    <a [routerLink]="['/details-trip', booking.rideData.id]" class="btn btn-sm btn-outline-secondary rounded-pill">
+                      View trip
+                    </a>
+                  }
+                </div>
               </div>
             </div>
-          </div>
-        }
-      </div>
-    }
-  </div>
+          }
+        </div>
+      }
+    </div>
+  }
 
 
   @if(loading){

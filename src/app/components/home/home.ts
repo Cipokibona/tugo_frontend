@@ -156,9 +156,6 @@ export class Home implements OnInit {
         ...booking,
         rideData: ridesById.get(booking.ride) || null,
       }));
-
-    // ✅ Log après avoir construit userBookings
-    console.log('userBookings', this.userBookings);
   }
 
   applyRideFilter() {
