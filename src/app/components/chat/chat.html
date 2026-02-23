@@ -8,8 +8,16 @@
     <div class="avatar me-2">{{ user?.username?.charAt(0)?.toUpperCase() || 'U' }}</div>
 
     <div class="flex-grow-1">
-      <div class="fw-semibold">Conversation #{{ conversationId || '-' }}</div>
-      <div class="text-success small">Messages</div>
+      <div class="fw-semibold">
+        {{ ride?.from_city || 'Ride' }} <i class="bi bi-arrow-right mx-1"></i> {{ ride?.to_city || '-' }}
+      </div>
+      <div class="text-success small">
+        @if(loadingConversation){
+          Preparing conversation...
+        } @else {
+          Conversation #{{ conversationId || '-' }}
+        }
+      </div>
     </div>
   </div>
 
@@ -23,6 +31,9 @@
     } @else {
       @for(message of messages; track message.id) {
         <div class="message" [class.sent]="isSentByMe(message)" [class.received]="!isSentByMe(message)">
+          @if(!isSentByMe(message)) {
+            <div class="small text-muted mb-1 px-1">{{ messageAuthor(message) }}</div>
+          }
           <div class="bubble">
             {{ messageContent(message) }}
           </div>
@@ -44,7 +55,7 @@
     >
     <button
       class="btn button principal btn-sm rounded-circle"
-      [disabled]="sendingMessage || !messageText.trim() || !conversationId"
+      [disabled]="sendingMessage || loadingConversation || !messageText.trim() || !conversationId"
       (click)="sendMessage()"
     >
       @if(!sendingMessage){
