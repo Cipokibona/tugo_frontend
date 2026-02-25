@@ -28,6 +28,7 @@ export class ServiceApi {
 
   private conversationUrl = `${this.url}conversations/`;
   private messageUrl = `${this.url}messages/`;
+  private notificationUrl = `${this.url}notifications/`;
 
    constructor(private router: Router) { }
 
@@ -609,6 +610,29 @@ export class ServiceApi {
     );
   }
 
+  patchConversation(conversationId: number, data: any): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      return throwError(() => new Error('No token found'));
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.patch<any>(`${this.conversationUrl}${conversationId}/`, data, { headers }).pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          return this.refreshToken().pipe(
+            switchMap(() => {
+              const newToken = this.getToken();
+              if (!newToken) return throwError(() => new Error('Token refresh failed'));
+              const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
+              return this.http.patch<any>(`${this.conversationUrl}${conversationId}/`, data, { headers: newHeaders });
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
   // MESSAGES
   getMessages(): Observable<any> {
     const token = this.getToken();
@@ -657,6 +681,53 @@ export class ServiceApi {
               if (!newToken) return throwError(() => new Error('Token refresh failed'));
               const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
               return this.http.put<any>(`${this.messageUrl}${messageId}/`, data, { headers: newHeaders });
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // NOTIFICATIONS
+  getNotifications(): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      return throwError(() => new Error('No token found'));
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.get<any>(`${this.notificationUrl}`, { headers }).pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          return this.refreshToken().pipe(
+            switchMap(() => {
+              const newToken = this.getToken();
+              if (!newToken) return throwError(() => new Error('Token refresh failed'));
+              const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
+              return this.http.get<any>(`${this.notificationUrl}`, { headers: newHeaders });
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  createNotification(data: any): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      return throwError(() => new Error('No token found'));
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.post<any>(this.notificationUrl, data, { headers }).pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          return this.refreshToken().pipe(
+            switchMap(() => {
+              const newToken = this.getToken();
+              if (!newToken) return throwError(() => new Error('Token refresh failed'));
+              const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
+              return this.http.post<any>(this.notificationUrl, data, { headers: newHeaders });
             })
           );
         }

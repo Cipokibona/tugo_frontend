@@ -11,10 +11,6 @@
         <i class="fa fa-bell"></i>
       </a>
     </div>
-    <!-- logo
-    <div class="col-4 text-end">
-      <img src="/logo_tugo.svg" alt="Tugo" style="width: 4rem;">
-    </div> -->
   </div>
 
   <!-- Search bar -->
@@ -40,7 +36,6 @@
   <!-- Navigation tabs -->
   <div class="mb-4">
     <ul class="nav nav-pills nav-fill gap-2 p-1 rounded-4 shadow-sm blackOrWhite flex-nowrap overflow-auto">
-
       <li class="nav-item">
         <a
           class="nav-link active rounded-pill px-3"
@@ -70,10 +65,8 @@
           Proposed itineraries
         </a>
       </li>
-
     </ul>
   </div>
-
 
   @if(activeTab === 'USER'){
     <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 blackOrWhite">
@@ -127,9 +120,7 @@
     </div>
   }
 
-
   @if(loading){
-    <!-- Loading spinner -->
     <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
       <div class="spinner-border principal" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -137,77 +128,89 @@
     </div>
   }@else{
     @if(rides.length === 0){
-      <!-- No rides available -->
       <div class="text-center text-muted my-5">
         <i class="fa fa-car fa-3x mb-3"></i>
         <h5>No rides available</h5>
         <p>Try adjusting your search criteria or check back later.</p>
       </div>
     }
-    <!-- Ride list -->
+
     <div class="row g-3">
       @for(ride of rides; track ride.id) {
-      <!-- Ride card -->
       <div class="col-md-6 col-lg-4">
         <a [routerLink]="['/details-trip', ride.id]" class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite h-100 link-underline link-underline-opacity-0">
 
-          <!-- Route -->
           <div class="mb-2">
             <span class="fw-semibold">{{ ride.from_city }}</span>
             <i class="fa-solid fa-arrow-right mx-2"></i>
             <span class="fw-semibold">{{ ride.to_city }}</span>
           </div>
 
-          <!-- Info -->
           <div class="d-flex justify-content-between small text-muted mb-2">
-            <span><i class="bi bi-calendar"></i> {{ ride.departure_date | date:'dd MMM yyyy' }}</span>
-            <span><i class="bi bi-clock"></i> {{ ride.departure_time }}</span>
+            <span><i class="fa-solid fa-calendar"></i> {{ ride.departure_date | date:'dd MMM yyyy' }}</span>
+            <span><i class="fa-solid fa-clock"></i> {{ ride.departure_time }}</span>
           </div>
 
-          <!-- Driver -->
-          <div class="d-flex align-items-center mb-3">
-            <div class="avatar me-2">{{ transform(ride.driver_username.charAt(0)) }}</div>
-            <div>
-              <div class="fw-semibold small">{{ ride.driver_username }}</div>
-              <div class="text-muted small">⭐ {{ ride.drive_rating }}</div>
-            </div>
-          </div>
-
-          <!-- Footer -->
-          <div class="d-flex justify-content-between align-items-center">
-            <span class="fw-bold principal">
-              {{prixFinal(ride.price) | number : '1.0-0' }} BIF
-            </span>
-            @if(!isMyRide(ride)){
-              <div class="d-flex align-items-center gap-2">
-                @if(ride.status === 'PROPOSED') {
-                  <span class="small text-muted">
-                    {{ joinedUsersCount(ride.id) }} joined
-                  </span>
-                  <button class="btn button principal btn-sm rounded-pill">
-                    Join
-                  </button>
-                } @else {
-                  <button class="btn button principal btn-sm rounded-pill">
-                    Book
-                  </button>
-                }
+          @if(ride.status === 'PROPOSED') {
+            <div class="proposal-box rounded-3 p-2 mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge text-bg-warning">Ride proposal</span>
+                <span class="small text-muted">{{ joinedUsersCount(ride.id) + 1 }} joined</span>
               </div>
-            } @else {
-              <span class="badge bg-success rounded-pill">
-                Your ride
-              </span>
-            }
-          </div>
+              <div class="small fw-semibold mb-1">This is not an existing ride yet.</div>
+              <div class="small text-muted">
+                No driver has accepted this trip. Joining this proposal significantly increases the chance of finding one.
+              </div>
+              <div class="d-flex align-items-center mt-2 p-2 border rounded shadow-sm bg-light">
+                <i class="fa-solid fa-tag me-2 text-primary"></i>
+                <div class="small text-muted me-1">Proposed price:</div>
+                <div class="fw-bold text-dark">
+                  {{ prixFinal(ride.price) | number:'1.0-0' }} BIF
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-end">
+              <button
+                class="btn button principal btn-sm rounded-pill"
+                [disabled]="hasJoinedProposal(ride.id)"
+              >
+                @if(hasJoinedProposal(ride.id)) {
+                  Joined
+                } @else {
+                  Join proposal
+                }
+              </button>
+            </div>
+          } @else {
+            <div class="d-flex align-items-center mb-3">
+              <div class="avatar me-2">{{ transform(ride.driver_username.charAt(0)) }}</div>
+              <div>
+                <div class="fw-semibold small">{{ ride.driver_username }}</div>
+                <div class="text-muted small">&#11088; {{ ride.drive_rating }}</div>
+              </div>
+            </div>
 
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold principal">
+                {{prixFinal(ride.price) | number : '1.0-0' }} BIF
+              </span>
+              @if(!isMyRide(ride)){
+                <button class="btn button principal btn-sm rounded-pill">
+                  Book
+                </button>
+              } @else {
+                <span class="badge bg-success rounded-pill">
+                  Your ride
+                </span>
+              }
+            </div>
+          }
 
         </a>
       </div>
       }
-
     </div>
   }
-
 
   <a href="/form-trip" class="fab-add shadow-lg">
     <i class="fa fa-sm fa-plus"></i>

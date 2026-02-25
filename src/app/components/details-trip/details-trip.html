@@ -180,6 +180,23 @@
                 [(ngModel)]="proposedDriverSeats"
               >
             </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-muted">Departure time:</span>
+              <input
+                type="time"
+                class="form-control form-control-sm w-auto"
+                [(ngModel)]="proposedDriverDepartureTime"
+              >
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-muted">Price (BIF):</span>
+              <input
+                type="number"
+                min="1"
+                class="form-control form-control-sm w-auto"
+                [(ngModel)]="proposedDriverPrice"
+              >
+            </div>
           }
         }
 
@@ -225,7 +242,7 @@
             class="btn button principal rounded-pill px-4"
             [disabled]="
               (isProposedRide() && proposedJoinRole === 'CLIENT' && hasJoinedRide()) ||
-              (isProposedRide() && proposedJoinRole === 'DRIVER' && proposedDriverSeats <= 0) ||
+              (isProposedRide() && proposedJoinRole === 'DRIVER' && (proposedDriverSeats <= 0 || !proposedDriverDepartureTime || proposedDriverPrice <= 0)) ||
               (!isProposedRide() && (seatsLeft <= 0 || !selectedSeats))
             "
             (click)="bookRide()"
@@ -233,7 +250,7 @@
             @if(!loadingBooking) {
               @if(isProposedRide()) {
                 @if(proposedJoinRole === 'DRIVER') {
-                  Create ride from proposal
+                  Create new ride
                 } @else {
                   Join
                 }

@@ -207,15 +207,18 @@ export class FormTrip implements OnInit {
       ...this.rideForm.value,
       status: this.userRole === 'CLIENT' ? 'PROPOSED' : 'OPEN',
     };
+    const isProposed = basePayload.status === 'PROPOSED';
 
-    const payload = this.userRole === 'CLIENT'
+    const payload = isProposed
       ? {
           ...basePayload,
           proposer: this.user.id,
+          driver: null,
         }
       : {
           ...basePayload,
           driver: this.user.id,
+          proposer: null,
         };
     console.log('Payload pour création de ride:', payload);
     this.service.createRide(payload).subscribe({

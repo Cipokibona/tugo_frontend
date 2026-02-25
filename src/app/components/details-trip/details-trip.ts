@@ -29,6 +29,8 @@ export class DetailsTrip implements OnInit {
   selectedSeats = 1;
   proposedJoinRole: 'CLIENT' | 'DRIVER' = 'CLIENT';
   proposedDriverSeats = 1;
+  proposedDriverDepartureTime = '';
+  proposedDriverPrice = 0;
 
   showInvoice = false;
   invoiceData: any = null;
@@ -67,6 +69,12 @@ export class DetailsTrip implements OnInit {
     this.service.getRideDetails(this.currentRideId).subscribe({
       next: ride => {
         this.ride = ride;
+        if (!this.proposedDriverDepartureTime) {
+          this.proposedDriverDepartureTime = ride?.departure_time || '';
+        }
+        if (!this.proposedDriverPrice) {
+          this.proposedDriverPrice = Number(ride?.price || 0);
+        }
         this.loading = false;
         console.log('Details de la course', this.ride);
       },
@@ -120,11 +128,24 @@ export class DetailsTrip implements OnInit {
     return this.ride?.proposer === this.user?.id;
   }
 
+  // get joinedUsersCount(): number {
+  //   const joined = this.bookings.filter(
+  //     booking => booking.status !== 'CANCELLED' && booking.status !== 'CLOSED'
+  //   );
+  //   return new Set(joined.map(booking => booking.passenger)).size;
+  // }
+
   get joinedUsersCount(): number {
     const joined = this.bookings.filter(
       booking => booking.status !== 'CANCELLED' && booking.status !== 'CLOSED'
     );
-    return new Set(joined.map(booking => booking.passenger)).size;
+
+    const uniquePassengers = new Set(
+      joined.map(booking => booking.passenger)
+    ).size;
+
+    // +1 pour inclure le proposer
+    return uniquePassengers + 1;
   }
 
   hasJoinedRide(): boolean {
@@ -149,6 +170,11 @@ export class DetailsTrip implements OnInit {
 
   setProposedJoinRole(role: 'CLIENT' | 'DRIVER') {
     this.proposedJoinRole = role;
+  }
+
+  refreshRideAndBookings() {
+    this.getRideDetails();
+    this.getBookings();
   }
 
   cancelMyBookings() {
@@ -248,6 +274,7 @@ export class DetailsTrip implements OnInit {
         this.showInvoice = true;
         this.selectedSeats = 1;
         this.loadingBooking = false;
+        this.refreshRideAndBookings();
       },
       error: (err) => {
         console.error('Error creating bookings', err);
@@ -273,6 +300,18 @@ export class DetailsTrip implements OnInit {
       next: (booking) => {
         this.bookings = [...this.bookings, booking];
         this.loadingBooking = false;
+        this.refreshRideAndBookings();
+
+        // Keep proposal status in background to avoid blocking UI state.
+        this.service.patchRide(this.ride!.id, { status: 'PROPOSED' }).subscribe({
+          next: (updatedRide) => {
+            this.ride = updatedRide || { ...this.ride, status: 'PROPOSED' };
+          },
+          error: (err) => {
+            console.error('Error forcing ride status to PROPOSED', err);
+            this.errorMessage = 'Booking created but unable to keep ride as PROPOSED.';
+          }
+        });
       },
       error: (err) => {
         console.error('Error joining proposal as client', err);
@@ -282,167 +321,79 @@ export class DetailsTrip implements OnInit {
     });
   }
 
-  async notifyEquivalentProposedRides(createdRideIds: number[]) {
+  async notifyJoinedUsersForNewRide(newRide: any) {
     if (!this.ride || !this.user) return;
 
     try {
-      const [rides, bookings, conversations] = await Promise.all([
-        firstValueFrom(this.service.getRides()),
-        firstValueFrom(this.service.getBookings()),
-        firstValueFrom(this.service.getConversations()),
-      ]);
+      const joinedUserIds = Array.from(new Set(
+        this.bookings
+          .filter((booking: any) => booking.status !== 'CANCELLED' && booking.status !== 'CLOSED')
+          .map((booking: any) => booking.passenger)
+      ));
 
-      const equivalentProposals = (rides || []).filter((ride: any) =>
-        ride.status === 'PROPOSED' &&
-        ride.id !== this.ride?.id &&
-        ride.from_city === this.ride?.from_city &&
-        ride.to_city === this.ride?.to_city &&
-        ride.departure_date === this.ride?.departure_date
+      const recipientIds = Array.from(new Set([
+        ...joinedUserIds,
+        this.ride.proposer,
+      ].filter((id: any) => !!id))).filter((id: any) => id !== this.user?.id);
+
+      if (recipientIds.length === 0) return;
+
+      const title = `New ride available: ${newRide.from_city} -> ${newRide.to_city}`;
+      const message = `A driver created a new ride from your proposal. Departure: ${newRide.departure_date} at ${newRide.departure_time}. Price: ${newRide.price} BIF. Open the ride details and book your seat if it matches your plan.`;
+
+      const requests = recipientIds.map((recipientId: number) =>
+        this.service.createNotification({
+          recipient: recipientId,
+          title,
+          message,
+          notification_type: 'RIDE_AVAILABLE',
+        })
       );
 
-      const equivalentRideIds = new Set(equivalentProposals.map((ride: any) => ride.id));
-      const bookingParticipants = (bookings || [])
-        .filter((booking: any) =>
-          equivalentRideIds.has(booking.ride) &&
-          booking.status !== 'CANCELLED' &&
-          booking.status !== 'CLOSED'
-        )
-        .map((booking: any) => booking.passenger);
-
-      const proposers = equivalentProposals
-        .map((ride: any) => ride.proposer)
-        .filter(Boolean);
-
-      const targetUserIds = Array.from(
-        new Set([...bookingParticipants, ...proposers])
-      ).filter((id: any) => id !== this.user?.id);
-
-      if (targetUserIds.length === 0) return;
-
-      const createdCount = createdRideIds.length;
-      const content = `NOTIFICATION: ${createdCount} ride(s) now available for ${this.ride.from_city} -> ${this.ride.to_city} on ${this.ride.departure_date}.`;
-
-      for (const userId of targetUserIds) {
-        const existingConversation = (conversations || []).find((conv: any) => {
-          const participants = conv.participants || [];
-          return participants.includes(this.user?.id) && participants.includes(userId);
-        });
-
-        let conversationId = existingConversation?.id;
-
-        if (!conversationId) {
-          const createdConversation = await firstValueFrom(
-            this.service.createConversation({
-              ride: this.ride.id,
-              participants: [this.user.id, userId],
-            })
-          );
-          conversationId = createdConversation?.id;
-        }
-
-        if (!conversationId) continue;
-
-        await firstValueFrom(this.service.createMessage({
-          conversation: conversationId,
-          sender: this.user.id,
-          message_type: 'TEXT',
-          content,
-        }));
-      }
+      await firstValueFrom(forkJoin(requests));
     } catch (error) {
-      console.error('Unable to send equivalent-ride notifications', error);
+      console.error('Unable to send new-ride notifications', error);
     }
   }
 
   async joinProposalAsDriver() {
     if (!this.ride || !this.user || this.loadingBooking) return;
     if (!this.proposedDriverSeats || this.proposedDriverSeats <= 0) return;
+    if (!this.proposedDriverDepartureTime) return;
+    if (!this.proposedDriverPrice || this.proposedDriverPrice <= 0) return;
 
     this.loadingBooking = true;
     this.errorMessage = null;
 
-    const activeBookings = [...this.bookings]
-      .filter(
-        booking =>
-          booking.status !== 'CANCELLED' &&
-          booking.status !== 'CLOSED' &&
-          booking.passenger !== this.user.id
-      )
-      .sort((a, b) => {
-        const timeA = new Date(a.booked_at || a.created_at || a.createdAt || 0).getTime();
-        const timeB = new Date(b.booked_at || b.created_at || b.createdAt || 0).getTime();
-        return timeA - timeB;
-      });
-
-    if (activeBookings.length === 0) {
-      this.errorMessage = 'No clients have joined this proposal yet.';
-      this.loadingBooking = false;
-      return;
-    }
-
-    const chunkSize = this.proposedDriverSeats;
-    const bookingChunks: any[][] = [];
-    for (let i = 0; i < activeBookings.length; i += chunkSize) {
-      bookingChunks.push(activeBookings.slice(i, i + chunkSize));
-    }
-
+    let createdRide: any | null = null;
     try {
-      const createdRideIds: number[] = [];
+      const ridePayload = {
+        from_city: this.ride.from_city,
+        to_city: this.ride.to_city,
+        departure_date: this.ride.departure_date,
+        departure_time: this.proposedDriverDepartureTime,
+        price: this.proposedDriverPrice,
+        available_seats: this.proposedDriverSeats,
+        distance_km: this.ride.distance_km,
+        additional_info: this.ride.additional_info || null,
+        vehicule: this.ride.vehicule || 'To be defined',
+        note: this.ride.note || null,
+        driver: this.user.id,
+        proposer: this.ride.proposer || null,
+        status: 'OPEN',
+      };
 
-      for (const chunk of bookingChunks) {
-        const ridePayload = {
-          from_city: this.ride.from_city,
-          to_city: this.ride.to_city,
-          departure_date: this.ride.departure_date,
-          departure_time: this.ride.departure_time,
-          price: this.ride.price,
-          available_seats: chunkSize,
-          distance_km: this.ride.distance_km,
-          additional_info: this.ride.additional_info || null,
-          vehicule: this.ride.vehicule || 'To be defined',
-          note: this.ride.note || null,
-          driver: this.user.id,
-          proposer: this.ride.proposer || null,
-          status: 'OPEN',
-        };
-
-        const createdRide = await firstValueFrom(this.service.createRide(ridePayload));
-        createdRideIds.push(createdRide.id);
-
-        const bookingRequests = chunk.map((booking) =>
-          this.service.createBooking({
-            ride: createdRide.id,
-            passenger: booking.passenger,
-            status: 'CONFIRMED',
-          })
-        );
-        if (bookingRequests.length > 0) {
-          await firstValueFrom(forkJoin(bookingRequests));
-        }
-      }
-
-      const closeOriginalRequests = activeBookings.map((booking) =>
-        this.service.patchBooking(booking.id, { status: 'CLOSED' })
-      );
-      if (closeOriginalRequests.length > 0) {
-        await firstValueFrom(forkJoin(closeOriginalRequests));
-      }
-
-      await firstValueFrom(this.service.patchRide(this.ride.id, { status: 'COMPLETED' }));
-      await this.notifyEquivalentProposedRides(createdRideIds);
-
-      this.ride = { ...this.ride, status: 'COMPLETED' };
-      this.bookings = this.bookings.map(booking => ({
-        ...booking,
-        status: activeBookings.some(b => b.id === booking.id) ? 'CLOSED' : booking.status,
-      })).filter(booking => booking.status !== 'CLOSED');
-
-      this.loadingBooking = false;
-      this.router.navigate(['/home']);
+      createdRide = await firstValueFrom(this.service.createRide(ridePayload));
     } catch (err) {
       console.error('Error joining proposal as driver', err);
-      this.errorMessage = 'Unable to convert proposal to active rides.';
+      this.errorMessage = 'Unable to create ride from proposal.';
+    } finally {
       this.loadingBooking = false;
+    }
+
+    if (createdRide?.id) {
+      void this.notifyJoinedUsersForNewRide(createdRide);
+      this.router.navigate(['/home']);
     }
   }
 

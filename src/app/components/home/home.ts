@@ -224,6 +224,23 @@ export class Home implements OnInit {
     return new Set(joined.map(booking => booking.passenger)).size;
   }
 
+  hasJoinedProposal(rideId: number): boolean {
+    if (!this.user) return false;
+    const ride = this.filteredRides.find(r => r.id === rideId);
+    const isProposer = ride?.proposer === this.user.id;
+    console.log(`User ${this.user.id} checking if joined proposal for ride ${ride?.proposer}: isProposer=${ride?.proposer}`, ride);
+
+    if (ride?.proposer === this.user.id) return true;
+
+    return this.bookings.some(
+      booking =>
+        booking.ride === rideId &&
+        booking.passenger === this.user.id &&
+        booking.status !== 'CANCELLED' &&
+        booking.status !== 'CLOSED'
+    );
+  }
+
   prixFinal(prix: number): number {
     const TVA = 0.18;
     const commissionRate = 0.10;
