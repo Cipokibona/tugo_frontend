@@ -17,6 +17,7 @@ export class Notifications implements OnInit {
   user: any | null = null;
   ridesById = new Map<number, any>();
 
+  notifications: any[] = [];
   notificationMessages: any[] = [];
   groupMessages: any[] = [];
 
@@ -33,12 +34,18 @@ export class Notifications implements OnInit {
     forkJoin({
       user: this.service.getUser(),
       rides: this.service.getRides(),
+      notifications: this.service.getNotifications(),
       conversations: this.service.getConversations(),
       messages: this.service.getMessages(),
     }).subscribe({
-      next: ({ user, rides, conversations, messages }) => {
+      next: ({ user, rides, notifications, conversations, messages }) => {
         this.user = user;
         this.ridesById = new Map((rides || []).map((ride: any) => [ride.id, ride]));
+        this.notifications = [...(notifications || [])].sort((a: any, b: any) => {
+          const timeA = new Date(a.created_at || a.createdAt || 0).getTime();
+          const timeB = new Date(b.created_at || b.createdAt || 0).getTime();
+          return timeB - timeA;
+        });
 
         const conversationMap = new Map((conversations || []).map((conversation: any) => [conversation.id, conversation]));
 
@@ -70,14 +77,14 @@ export class Notifications implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        this.errorMessage = error?.detail || 'Unable to load notifications';
+        this.errorMessage = error?.error?.detail || error?.detail || 'Unable to load notifications';
         this.loading = false;
       }
     });
   }
 
-  messageTime(message: any): string {
-    const rawDate = message.created_at || message.createdAt;
+  messageTime(item: any): string {
+    const rawDate = item.created_at || item.createdAt;
     if (!rawDate) return '';
 
     const date = new Date(rawDate);
@@ -99,5 +106,43 @@ export class Notifications implements OnInit {
     if (!ride) return `Ride #${rideId}`;
 
     return `${ride.from_city} -> ${ride.to_city}`;
+  }
+
+  notificationTitle(notification: any): string {
+    return notification?.title || 'Notification';
+  }
+
+  notificationMessage(notification: any): string {
+    return notification?.message || '';
+  }
+
+  notificationRideId(notification: any): number | null {
+    const message = this.notificationMessage(notification);
+    const match = message.match(/\/details-trip\/(\d+)/);
+    if (!match || !match[1]) return null;
+
+    const rideId = Number(match[1]);
+    return Number.isNaN(rideId) ? null : rideId;
+  }
+
+  get unreadNotificationsCount(): number {
+    return this.notifications.filter((notification: any) => !notification?.is_read).length;
+  }
+
+  markNotificationAsRead(notification: any, event?: Event): void {
+    if (!notification?.id || notification?.is_read) return;
+
+    this.service.markNotificationRead(notification.id).subscribe({
+      next: () => {
+        this.notifications = this.notifications.map((item: any) =>
+          item.id === notification.id ? { ...item, is_read: true } : item
+        );
+      },
+      error: () => {
+        if (event) {
+          event.preventDefault();
+        }
+      },
+    });
   }
 }

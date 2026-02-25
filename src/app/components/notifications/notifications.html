@@ -1,4 +1,4 @@
-<div class="container-fluid background min-vh-100 p-3">
+﻿<div class="container-fluid background min-vh-100 p-3">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h5 class="fw-bold mb-0">Notifications</h5>
     <a [routerLink]="['/home']" class="btn btn-sm btn-outline-secondary rounded-pill">Back home</a>
@@ -14,11 +14,56 @@
     }
 
     <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
-      <h6 class="fw-semibold mb-3">Ride notifications</h6>
-      @if(notificationMessages.length === 0) {
+      <h6 class="fw-semibold mb-3 d-flex align-items-center gap-2">
+        <span>Ride notifications</span>
+        @if(unreadNotificationsCount > 0) {
+          <span class="badge rounded-pill text-bg-danger">{{ unreadNotificationsCount }} unread</span>
+        }
+      </h6>
+      @if(notifications.length === 0 && notificationMessages.length === 0) {
         <div class="small text-muted">No notifications yet.</div>
       } @else {
         <div class="d-flex flex-column gap-2">
+          @for(notification of notifications; track notification.id) {
+            @if(notificationRideId(notification)) {
+              <a
+                [routerLink]="['/details-trip', notificationRideId(notification)]"
+                class="notification-item text-decoration-none"
+                (click)="markNotificationAsRead(notification)"
+              >
+                <div class="small fw-semibold d-flex align-items-center gap-2">
+                  <span>{{ notificationTitle(notification) }}</span>
+                  @if(!notification?.is_read) {
+                    <span class="badge rounded-pill text-bg-danger">Unread</span>
+                  }
+                </div>
+                <div class="small text-muted">{{ notificationMessage(notification) }}</div>
+                <div class="time small text-muted">
+                  {{ notification.sender_username || 'System' }} • {{ messageTime(notification) }}
+                </div>
+              </a>
+            } @else {
+              <div class="notification-item">
+                <div class="small fw-semibold d-flex align-items-center gap-2">
+                  <span>{{ notificationTitle(notification) }}</span>
+                  @if(!notification?.is_read) {
+                    <span class="badge rounded-pill text-bg-danger">Unread</span>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary rounded-pill ms-2"
+                      (click)="markNotificationAsRead(notification, $event)"
+                    >
+                      Mark as read
+                    </button>
+                  }
+                </div>
+                <div class="small text-muted">{{ notificationMessage(notification) }}</div>
+                <div class="time small text-muted">
+                  {{ notification.sender_username || 'System' }} • {{ messageTime(notification) }}
+                </div>
+              </div>
+            }
+          }
           @for(message of notificationMessages; track message.id) {
             <a [routerLink]="['/chat', message?.conversationData?.ride || 0]" class="notification-item text-decoration-none">
               <div class="small fw-semibold">{{ messageRide(message) }}</div>

@@ -44,7 +44,12 @@
         data-bs-target="#navbarToggleExternalContent"
       >
         <i class="fa fa-bell"></i>
-        <span>Notifications</span>
+        <span class="d-inline-flex align-items-center gap-2">
+          <span>Notifications</span>
+          @if(unreadNotificationsCount > 0) {
+            <span class="badge rounded-pill text-bg-danger">{{ unreadNotificationsCount }}</span>
+          }
+        </span>
       </a>
 
       <!--

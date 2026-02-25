@@ -25,6 +25,7 @@ export class Home implements OnInit {
   loadingBookings = false;
   errorPage: any | null = null;
   bookingError: string | null = null;
+  unreadNotificationsCount = 0;
 
   activeTab: 'ALL' | 'USER' | 'PROPOSED' = 'ALL';
 
@@ -59,9 +60,10 @@ export class Home implements OnInit {
     forkJoin({
       user: this.service.getUser(),
       rides: this.service.getRides(),
-      bookings: this.service.getBookings()
+      bookings: this.service.getBookings(),
+      notifications: this.service.getNotifications(),
     }).subscribe({
-      next: ({ user, rides, bookings }) => {
+      next: ({ user, rides, bookings, notifications }) => {
 
         // ✅ user
         this.user = user;
@@ -72,6 +74,9 @@ export class Home implements OnInit {
 
         // ✅ bookings
         this.bookings = bookings || [];
+        this.unreadNotificationsCount = (notifications || []).filter(
+          (notification: any) => !notification?.is_read
+        ).length;
 
         // ✅ mapping seulement quand tout est prêt
         this.mapUserBookingsToRides();

@@ -339,7 +339,8 @@ export class DetailsTrip implements OnInit {
       if (recipientIds.length === 0) return;
 
       const title = `New ride available: ${newRide.from_city} -> ${newRide.to_city}`;
-      const message = `A driver created a new ride from your proposal. Departure: ${newRide.departure_date} at ${newRide.departure_time}. Price: ${newRide.price} BIF. Open the ride details and book your seat if it matches your plan.`;
+      const tripLink = `/details-trip/${newRide.id}`;
+      const message = `A driver created a new ride from your proposal. Departure: ${newRide.departure_date} at ${newRide.departure_time}. Price: ${newRide.price} BIF. Open this trip: ${tripLink}`;
 
       const requests = recipientIds.map((recipientId: number) =>
         this.service.createNotification({
@@ -392,7 +393,7 @@ export class DetailsTrip implements OnInit {
     }
 
     if (createdRide?.id) {
-      void this.notifyJoinedUsersForNewRide(createdRide);
+      await this.notifyJoinedUsersForNewRide(createdRide);
       this.router.navigate(['/home']);
     }
   }
