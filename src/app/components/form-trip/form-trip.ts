@@ -17,6 +17,7 @@ import { Router } from '@angular/router';
 export class FormTrip implements OnInit {
 
   rideForm!: FormGroup;
+  userRole: 'DRIVER' | 'CLIENT' = 'DRIVER';
   platformId = inject(PLATFORM_ID);
   map: any;
   private L: any;
@@ -85,11 +86,49 @@ export class FormTrip implements OnInit {
       to_city: ['', Validators.required],
       departure_date: ['', Validators.required],
       departure_time: ['', Validators.required],
-      price: [0, Validators.required],
+      price: [0, [Validators.required, Validators.min(1)]],
       available_seats: [1, Validators.required],
       vehicule: ['', Validators.required],
-      note: ['']
+      note: [''],
+      status: ['OPEN']
     });
+  }
+
+  setUserRole(role: 'DRIVER' | 'CLIENT') {
+    this.userRole = role;
+
+    const priceCtrl = this.rideForm.get('price');
+    const seatsCtrl = this.rideForm.get('available_seats');
+    const vehiculeCtrl = this.rideForm.get('vehicule');
+    const statusCtrl = this.rideForm.get('status');
+
+    if (role === 'CLIENT') {
+      seatsCtrl?.clearValidators();
+      vehiculeCtrl?.clearValidators();
+
+      this.rideForm.patchValue({
+        available_seats: 1,
+        vehicule: 'N/A',
+        status: 'PROPOSED',
+      });
+    } else {
+      priceCtrl?.setValidators([Validators.required, Validators.min(1)]);
+      seatsCtrl?.setValidators([Validators.required]);
+      vehiculeCtrl?.setValidators([Validators.required]);
+
+      this.rideForm.patchValue({
+        status: 'OPEN',
+      });
+    }
+
+    priceCtrl?.updateValueAndValidity();
+    seatsCtrl?.updateValueAndValidity();
+    vehiculeCtrl?.updateValueAndValidity();
+    statusCtrl?.updateValueAndValidity();
+  }
+
+  isDriverRole(): boolean {
+    return this.userRole === 'DRIVER';
   }
 
   // Charger l’itinéraire et choisir la meilleure route
@@ -164,10 +203,20 @@ export class FormTrip implements OnInit {
     this.loading = true;
 
     // Envoyer la route choisie au backend
-    const payload = {
+    const basePayload = {
       ...this.rideForm.value,
-      driver: this.user.id,
+      status: this.userRole === 'CLIENT' ? 'PROPOSED' : 'OPEN',
     };
+
+    const payload = this.userRole === 'CLIENT'
+      ? {
+          ...basePayload,
+          proposer: this.user.id,
+        }
+      : {
+          ...basePayload,
+          driver: this.user.id,
+        };
     console.log('Payload pour création de ride:', payload);
     this.service.createRide(payload).subscribe({
       next: () => {

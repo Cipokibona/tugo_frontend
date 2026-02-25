@@ -6,6 +6,11 @@
       <h4 class="fw-bold mb-0">Available rides</h4>
       <p class="text-muted small">Find a ride near you</p>
     </div>
+    <div class="col-4 text-end">
+      <a [routerLink]="['/notifications']" class="btn btn-sm btn-outline-secondary rounded-pill">
+        <i class="fa fa-bell"></i>
+      </a>
+    </div>
     <!-- logo
     <div class="col-4 text-end">
       <img src="/logo_tugo.svg" alt="Tugo" style="width: 4rem;">
@@ -90,7 +95,7 @@
               <div class="booking-item border rounded-3 p-2">
                 <div class="fw-semibold small mb-1">
                   {{ booking.rideData?.from_city || 'Unknown city' }}
-                  <i class="bi bi-arrow-right mx-1"></i>
+                  <i class="fas fa-arrow-right mx-1"></i>
                   {{ booking.rideData?.to_city || 'Unknown city' }}
                 </div>
                 <div class="text-muted small mb-2">
@@ -149,7 +154,7 @@
           <!-- Route -->
           <div class="mb-2">
             <span class="fw-semibold">{{ ride.from_city }}</span>
-            <i class="bi bi-arrow-right mx-2"></i>
+            <i class="fa-solid fa-arrow-right mx-2"></i>
             <span class="fw-semibold">{{ ride.to_city }}</span>
           </div>
 
@@ -174,9 +179,20 @@
               {{prixFinal(ride.price) | number : '1.0-0' }} BIF
             </span>
             @if(!isMyRide(ride)){
-              <button class="btn button principal btn-sm rounded-pill">
-                Book
-              </button>
+              <div class="d-flex align-items-center gap-2">
+                @if(ride.status === 'PROPOSED') {
+                  <span class="small text-muted">
+                    {{ joinedUsersCount(ride.id) }} joined
+                  </span>
+                  <button class="btn button principal btn-sm rounded-pill">
+                    Join
+                  </button>
+                } @else {
+                  <button class="btn button principal btn-sm rounded-pill">
+                    Book
+                  </button>
+                }
+              </div>
             } @else {
               <span class="badge bg-success rounded-pill">
                 Your ride

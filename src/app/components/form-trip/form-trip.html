@@ -1,22 +1,43 @@
 <div class="container-fluid background min-vh-100 p-3">
 
-  <!-- Header -->
   <div class="d-flex align-items-center mb-4">
     <button
-    class="btn btn-light btn-sm rounded-circle me-2"
-    (click)="goBack()"
+      class="btn btn-light btn-sm rounded-circle me-2"
+      (click)="goBack()"
     >
       <i class="fa-solid fa-arrow-left"></i>
     </button>
     <h5 class="fw-bold mb-0">Create itinerary</h5>
   </div>
 
-  <!-- Form card -->
   <div class="card border-0 shadow-sm rounded-4 p-4 blackOrWhite">
 
     <form [formGroup]="rideForm" (ngSubmit)="submit()">
 
-      <!-- Departure -->
+      <div class="mb-3">
+        <label class="small fw-semibold mb-2 d-block">I am creating this trip as</label>
+        <div class="d-flex gap-2">
+          <button
+            type="button"
+            class="btn btn-sm rounded-pill px-3"
+            [class.principal]="userRole === 'DRIVER'"
+            [class.btn-outline-secondary]="userRole !== 'DRIVER'"
+            (click)="setUserRole('DRIVER')"
+          >
+            Driver
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm rounded-pill px-3"
+            [class.principal]="userRole === 'CLIENT'"
+            [class.btn-outline-secondary]="userRole !== 'CLIENT'"
+            (click)="setUserRole('CLIENT')"
+          >
+            Client
+          </button>
+        </div>
+      </div>
+
       <div class="mb-3">
         <label class="small fw-semibold mb-1">From</label>
         <div class="input-group input-group-sm">
@@ -34,7 +55,6 @@
         </div>
       </div>
 
-      <!-- Destination -->
       <div class="mb-3">
         <label class="small fw-semibold mb-1">To</label>
         <div class="input-group input-group-sm">
@@ -52,59 +72,61 @@
         </div>
       </div>
 
-      <!-- Map
-      <div class="mb-4">
-        <div id="map" class="map-container rounded-3"></div>
-      </div>-->
-
-      <!-- Date & time -->
       <div class="row">
         <div class="col-6 mb-3">
           <label class="small fw-semibold mb-1">Date</label>
           <input
-          type="date"
-          class="form-control form-control-sm"
-          formControlName="departure_date"
-          required>
+            type="date"
+            class="form-control form-control-sm"
+            formControlName="departure_date"
+            required>
         </div>
 
         <div class="col-6 mb-3">
           <label class="small fw-semibold mb-1">Time</label>
           <input
-          type="time"
-          class="form-control form-control-sm"
-          formControlName="departure_time"
-          required>
+            type="time"
+            class="form-control form-control-sm"
+            formControlName="departure_time"
+            required>
         </div>
       </div>
 
-      <!-- Seats & price -->
       <div class="row">
-        <div class="col-6 mb-3">
-          <label class="small fw-semibold mb-1">Available seats</label>
-          <div class="input-group input-group-sm">
-            <span class="input-group-text bg-transparent border-end-0">
-              <i class="fa-solid fa-users"></i>
-            </span>
-            <input
-              type="number"
-              min="1"
-              class="form-control border-start-0"
-              placeholder="Seats"
-              formControlName="available_seats"
-              required
-            >
+        @if(isDriverRole()) {
+          <div class="col-6 mb-3">
+            <label class="small fw-semibold mb-1">Available seats</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-transparent border-end-0">
+                <i class="fa-solid fa-users"></i>
+              </span>
+              <input
+                type="number"
+                min="1"
+                class="form-control border-start-0"
+                placeholder="Seats"
+                formControlName="available_seats"
+                required
+              >
+            </div>
           </div>
-        </div>
+        }
 
         <div class="col-6 mb-3">
-          <label class="small fw-semibold mb-1">Price (BIF)</label>
+          <label class="small fw-semibold mb-1">
+            @if(isDriverRole()) {
+              Price (BIF)
+            } @else {
+              Proposed price (BIF)
+            }
+          </label>
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-transparent border-end-0">
               <i class="fa-solid fa-money-bill-wave"></i>
             </span>
             <input
               type="number"
+              min="1"
               class="form-control border-start-0"
               placeholder="Price"
               formControlName="price"
@@ -114,23 +136,23 @@
         </div>
       </div>
 
-      <!-- Vehicle -->
-      <div class="mb-3">
-        <label class="small fw-semibold mb-1">Vehicule</label>
-        <div class="input-group input-group-sm">
-          <span class="input-group-text bg-transparent border-end-0">
-            <i class="fa-solid fa-car"></i>
-          </span>
-          <input
-            type="text"
-            class="form-control border-start-0"
-            formControlName="vehicule"
-            placeholder="Vehicle model"
-          >
+      @if(isDriverRole()) {
+        <div class="mb-3">
+          <label class="small fw-semibold mb-1">Vehicule</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-transparent border-end-0">
+              <i class="fa-solid fa-car"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control border-start-0"
+              formControlName="vehicule"
+              placeholder="Vehicle model"
+            >
+          </div>
         </div>
-      </div>
+      }
 
-      <!-- Notes -->
       <div class="mb-4">
         <label class="small fw-semibold mb-1">Additional notes</label>
         <textarea
@@ -141,17 +163,19 @@
         ></textarea>
       </div>
 
-      <!-- TVA + commission info -->
       <div class="alert alert-warning d-flex align-items-start gap-2 rounded-3 shadow-sm border-0 mb-3">
         <i class="fa-solid fa-circle-info mt-1"></i>
         <div class="small">
-          <strong>Information sur le prix :</strong><br>
-          Le prix que vous fixez correspond à votre montant de base.
-          La TVA ainsi que les frais de service de la plateforme seront ajoutés automatiquement au prix final payé par le passager.
+          @if(isDriverRole()) {
+            <strong>Price information:</strong><br>
+            The price you set is your base amount. VAT and platform service fees are added automatically.
+          } @else {
+            <strong>Client proposal:</strong><br>
+            This itinerary will be published as <strong>PROPOSED</strong> and drivers can join it.
+          }
         </div>
       </div>
 
-      <!-- Submit -->
       <div class="d-grid">
         @if(errorMessage){
           <div class="alert alert-danger mb-3" role="alert">
@@ -159,9 +183,10 @@
           </div>
         }
         <button
-        type="submit"
-        class="btn button principal rounded-pill py-2 col-6 mx-auto"
-        [disabled]="rideForm.invalid || loading">
+          type="submit"
+          class="btn button principal rounded-pill py-2 col-6 mx-auto"
+          [disabled]="rideForm.invalid || loading"
+        >
           @if(loading){
             <span class="spinner-border spinner-border-sm me-2"></span>
             Publishing...

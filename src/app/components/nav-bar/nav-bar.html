@@ -1,15 +1,81 @@
-<div class="collapse" id="navbarToggleExternalContent" data-bs-theme="dark">
-  <div class="bg-dark p-4">
-    <h5 class="text-body-emphasis h4">Collapsed content</h5>
-    <span class="text-body-secondary">Toggleable via the navbar brand.</span>
-  </div>
-</div>
-<nav class="navbar navbar-dark bg-dark">
-  <div class="container-fluid">
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
+<nav class="nav-shell">
+  <div class="nav-bar-inner">
+    <div class="brand-block">
+      <img src="/logo_tugo_white.svg" alt="Tugo" class="brand-logo">
+      <div>
+        <div class="brand-title">Tugo</div>
+      </div>
+    </div>
+
+    <button
+      class="menu-toggle"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarToggleExternalContent"
+      aria-controls="navbarToggleExternalContent"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <i class="fa fa-bars"></i>
     </button>
-    <img class="me-3" src="/logo_tugo_white.svg" alt="Tugo" style="width: 4rem;">
   </div>
 </nav>
 
+<div class="collapse" id="navbarToggleExternalContent">
+  <div class="menu-panel">
+    <div class="menu-grid">
+      <a
+        class="menu-link"
+        [routerLink]="['/home']"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarToggleExternalContent"
+      >
+        <i class="fa fa-house"></i>
+        <span>Home</span>
+      </a>
+
+      <a
+        class="menu-link"
+        [routerLink]="['/notifications']"
+        routerLinkActive="active"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarToggleExternalContent"
+      >
+        <i class="fa fa-bell"></i>
+        <span>Notifications</span>
+      </a>
+
+      <!--
+      <a
+        class="menu-link"
+        [routerLink]="['/home']"
+        [queryParams]="{ tab: 'USER' }"
+        routerLinkActive="active"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarToggleExternalContent"
+      >
+        <i class="fa fa-car"></i>
+        <span>My ride</span>
+      </a>
+      -->
+
+      <a
+        class="menu-link"
+        [routerLink]="['/about-us']"
+        routerLinkActive="active"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarToggleExternalContent"
+      >
+        <i class="fa fa-address-card"></i>
+        <span>Contact us</span>
+      </a>
+    </div>
+
+    <button class="logout-btn" (click)="logout()">
+      <i class="fa fa-right-from-bracket"></i>
+      <span>Logout</span>
+    </button>
+  </div>
+</div>

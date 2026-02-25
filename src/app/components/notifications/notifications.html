@@ -1,0 +1,50 @@
+<div class="container-fluid background min-vh-100 p-3">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h5 class="fw-bold mb-0">Notifications</h5>
+    <a [routerLink]="['/home']" class="btn btn-sm btn-outline-secondary rounded-pill">Back home</a>
+  </div>
+
+  @if(loading) {
+    <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+      <div class="spinner-border principal" role="status"></div>
+    </div>
+  } @else {
+    @if(errorMessage) {
+      <div class="alert alert-danger py-2 small">{{ errorMessage }}</div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
+      <h6 class="fw-semibold mb-3">Ride notifications</h6>
+      @if(notificationMessages.length === 0) {
+        <div class="small text-muted">No notifications yet.</div>
+      } @else {
+        <div class="d-flex flex-column gap-2">
+          @for(message of notificationMessages; track message.id) {
+            <a [routerLink]="['/chat', message?.conversationData?.ride || 0]" class="notification-item text-decoration-none">
+              <div class="small fw-semibold">{{ messageRide(message) }}</div>
+              <div class="small text-muted">{{ message.content }}</div>
+              <div class="time small text-muted">{{ messageTime(message) }}</div>
+            </a>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite">
+      <h6 class="fw-semibold mb-3">Group trip messages</h6>
+      @if(groupMessages.length === 0) {
+        <div class="small text-muted">No group messages yet.</div>
+      } @else {
+        <div class="d-flex flex-column gap-2">
+          @for(message of groupMessages; track message.id) {
+            <a [routerLink]="['/chat', message?.conversationData?.ride || 0]" class="notification-item text-decoration-none">
+              <div class="small fw-semibold">{{ messageRide(message) }}</div>
+              <div class="small text-muted">{{ message.sender_username || 'User' }}: {{ message.content }}</div>
+              <div class="time small text-muted">{{ messageTime(message) }}</div>
+            </a>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

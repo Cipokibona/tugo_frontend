@@ -1,0 +1,15 @@
+.notification-item {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.75rem;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.notification-item:hover {
+  border-color: rgba(255, 114, 0, 0.4);
+}
+
+.time {
+  margin-top: 0.2rem;
+}

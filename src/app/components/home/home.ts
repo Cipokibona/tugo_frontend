@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ServiceApi } from '../../services/service-api';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 
@@ -35,9 +35,18 @@ export class Home implements OnInit {
     date: null,
   };
 
-  constructor(private service: ServiceApi, private router: Router) {}
+  constructor(
+    private service: ServiceApi,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit() {
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+    if (tab === 'ALL' || tab === 'USER' || tab === 'PROPOSED') {
+      this.activeTab = tab;
+    }
+
     // this.getUser();
     // this.getRides();
     this.loadInitialData();
@@ -142,6 +151,22 @@ export class Home implements OnInit {
     });
   }
 
+  // mapUserBookingsToRides() {
+  //   if (!this.user) {
+  //     this.userBookings = [];
+  //     return;
+  //   }
+
+  //   const ridesById = new Map(this.filteredRides.map(ride => [ride.id, ride]));
+
+  //   this.userBookings = this.bookings
+  //     .filter(booking => booking.passenger === this.user.id && booking.status !== 'CLOSED')
+  //     .map(booking => ({
+  //       ...booking,
+  //       rideData: ridesById.get(booking.ride) || null,
+  //     }));
+  // }
+
   mapUserBookingsToRides() {
     if (!this.user) {
       this.userBookings = [];
@@ -151,7 +176,13 @@ export class Home implements OnInit {
     const ridesById = new Map(this.filteredRides.map(ride => [ride.id, ride]));
 
     this.userBookings = this.bookings
-      .filter(booking => booking.passenger === this.user.id && booking.status !== 'CLOSED')
+      .filter(booking => {
+        return (
+          booking.passenger === this.user.id &&
+          booking.status !== 'CLOSED' &&
+          booking.status !== 'CANCELLED'
+        );
+      })
       .map(booking => ({
         ...booking,
         rideData: ridesById.get(booking.ride) || null,
@@ -167,7 +198,7 @@ export class Home implements OnInit {
     switch (this.activeTab) {
       case 'USER':
         this.rides = this.filteredRides.filter(
-          ride => ride.driver === this.user.id
+          ride => ride.driver === this.user.id && ride.status === 'OPEN'
         );
         break;
 
@@ -184,6 +215,13 @@ export class Home implements OnInit {
 
   isMyRide(ride: any): boolean {
     return this.user && ride.driver === this.user.id;
+  }
+
+  joinedUsersCount(rideId: number): number {
+    const joined = this.bookings.filter(
+      booking => booking.ride === rideId && booking.status !== 'CANCELLED'
+    );
+    return new Set(joined.map(booking => booking.passenger)).size;
   }
 
   prixFinal(prix: number): number {

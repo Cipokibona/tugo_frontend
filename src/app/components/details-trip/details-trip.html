@@ -11,10 +11,13 @@
   </div>
 
   <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
-    <div class="mb-2">
+    <div class="mb-2 d-flex align-items-center gap-2">
       <span class="fw-bold">{{ ride?.from_city }}</span>
-      <i class="fas fa-arrow-right mx-2"></i>
+      <i class="fas fa-arrow-right"></i>
       <span class="fw-bold">{{ ride?.to_city }}</span>
+      @if(isProposedRide()) {
+        <span class="badge text-bg-warning">PROPOSED</span>
+      }
     </div>
 
     <div class="row small text-muted">
@@ -30,7 +33,11 @@
       </div>
       <div class="col-6 mt-2">
         <i class="bi bi-people"></i>
-        {{ ((ride?.available_seats || 0) - (bookings.length || 0)) }} seats left
+        @if(isProposedRide()) {
+          {{ joinedUsersCount }} joined
+        } @else {
+          {{ ((ride?.available_seats || 0) - (bookings.length || 0)) }} seats left
+        }
       </div>
     </div>
   </div>
@@ -38,11 +45,19 @@
   <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
     <div class="d-flex align-items-center">
       <div class="avatar me-3">
-        {{ ride?.driver_username?.charAt(0)?.toUpperCase() }}
+        {{ (isProposedRide() ? (ride?.proposer_username || ride?.driver_username) : ride?.driver_username)?.charAt(0)?.toUpperCase() }}
       </div>
       <div class="flex-grow-1">
-        <div class="fw-semibold">{{ ride?.driver_username }}</div>
-        <div class="text-muted small"> ⭐ {{ ride?.drive_rating }}</div>
+        <div class="fw-semibold">
+          {{ isProposedRide() ? (ride?.proposer_username || 'Proposer') : ride?.driver_username }}
+        </div>
+        <div class="text-muted small">
+          @if(isProposedRide()) {
+            Proposal creator
+          } @else {
+            Rating {{ ride?.drive_rating }}
+          }
+        </div>
       </div>
       <a [routerLink]="['/chat', ride?.id]" class="btn btn-outline-info btn-sm rounded-pill">
         <i class="fa fa-comment mx-1"></i>
@@ -58,7 +73,7 @@
       {{ ride?.vehicule || 'Not specified' }}
     </p>
     <p class="small text-muted mb-0">
-      {{ ride?.note || 'No additional information provided by the driver.' }}
+      {{ ride?.note || 'No additional information provided.' }}
     </p>
 
     @if(isDriver()) {
@@ -98,68 +113,138 @@
 
   @let seatsLeft = ((ride?.available_seats || 0) - (bookings.length || 0));
 
-  @if(!isDriver()) {
+  @if(!isDriver() && !isProposer()) {
     <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-        <div class="flex-grow-1 min-w-100 min-w-sm-auto">
-          <div class="small text-muted">Price / seat</div>
-          <div class="fw-bold fs-5 principal">
-            {{ prixFinal(ride?.price) | number:'1.2-2' }} BIF
-          </div>
-        </div>
 
-        <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-100 min-w-sm-auto">
-          <span class="small text-muted">Seats:</span>
-          <select class="form-select form-select-sm w-auto" [(ngModel)]="selectedSeats">
-            @for (n of [].constructor(seatsLeft); track $index) {
-              <option [value]="$index + 1">{{ $index + 1 }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="flex-grow-1 min-w-100 min-w-sm-auto">
-          <div class="small text-muted">Total</div>
-          <div class="fw-bold">
-            {{ ((selectedSeats || 1) * (prixFinal(ride?.price) || 0)) | number:'1.2-2' }} BIF
+        @if(!isProposedRide()) {
+          <div class="flex-grow-1 min-w-100 min-w-sm-auto">
+            <div class="small text-muted">Price / seat</div>
+            <div class="fw-bold fs-5 principal">
+              {{ prixFinal(ride?.price) | number:'1.2-2' }} BIF
+            </div>
           </div>
-        </div>
+
+          <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-100 min-w-sm-auto">
+            <span class="small text-muted">Seats:</span>
+            <select class="form-select form-select-sm w-auto" [(ngModel)]="selectedSeats">
+              @for (n of [].constructor(seatsLeft); track $index) {
+                <option [value]="$index + 1">{{ $index + 1 }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="flex-grow-1 min-w-100 min-w-sm-auto">
+            <div class="small text-muted">Total</div>
+            <div class="fw-bold">
+              {{ ((selectedSeats || 1) * (prixFinal(ride?.price) || 0)) | number:'1.2-2' }} BIF
+            </div>
+          </div>
+        } @else {
+          <div class="flex-grow-1 min-w-100 min-w-sm-auto">
+            <div class="small text-muted">Joined users</div>
+            <div class="fw-bold fs-5 principal">{{ joinedUsersCount }}</div>
+          </div>
+
+          <div class="w-100"></div>
+
+          <div class="d-flex align-items-center gap-2">
+            <span class="small text-muted">Join as:</span>
+            <button
+              type="button"
+              class="btn btn-sm rounded-pill px-3"
+              [class.principal]="proposedJoinRole === 'CLIENT'"
+              [class.btn-outline-secondary]="proposedJoinRole !== 'CLIENT'"
+              (click)="setProposedJoinRole('CLIENT')"
+            >
+              Client
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm rounded-pill px-3"
+              [class.principal]="proposedJoinRole === 'DRIVER'"
+              [class.btn-outline-secondary]="proposedJoinRole !== 'DRIVER'"
+              (click)="setProposedJoinRole('DRIVER')"
+            >
+              Driver
+            </button>
+          </div>
+
+          @if(proposedJoinRole === 'DRIVER') {
+            <div class="d-flex align-items-center gap-2">
+              <span class="small text-muted">Available seats:</span>
+              <input
+                type="number"
+                min="1"
+                class="form-control form-control-sm w-auto"
+                [(ngModel)]="proposedDriverSeats"
+              >
+            </div>
+          }
+        }
 
         <small class="text-warning">
-          You can cancel your booking only 30 minutes before departure.
+          @if(isProposedRide()) {
+            Join this proposal to show your interest in this trip.
+          } @else {
+            You can cancel your booking only 30 minutes before departure.
+          }
         </small>
 
         @if(userBookedSeatsCount > 0) {
           <small class="text-muted">
-            You have booked <strong>{{ userBookedSeatsCount }}</strong> seat(s) on this ride.
+            @if(isProposedRide()) {
+              You have joined this proposal.
+            } @else {
+              You have booked <strong>{{ userBookedSeatsCount }}</strong> seat(s) on this ride.
+            }
           </small>
         }
 
         <div class="d-flex gap-2 flex-grow-1 min-w-100 min-w-sm-auto">
-          <button
-            class="btn btn-outline-secondary rounded-pill px-4"
-            [disabled]="userBookedSeatsCount === 0 || cancellingBooking"
-            (click)="cancelMyBookings()"
-          >
-            @if(!cancellingBooking) {
-              Cancel booking
-            } @else {
-              <i class="spinner-border spinner-border-sm me-2"></i>
-              Cancelling...
-            }
-          </button>
+          @if(!(isProposedRide() && proposedJoinRole === 'DRIVER')) {
+            <button
+              class="btn btn-outline-secondary rounded-pill px-4"
+              [disabled]="userBookedSeatsCount === 0 || cancellingBooking"
+              (click)="cancelMyBookings()"
+            >
+              @if(!cancellingBooking) {
+                @if(isProposedRide()) {
+                  Cancel join
+                } @else {
+                  Cancel booking
+                }
+              } @else {
+                <i class="spinner-border spinner-border-sm me-2"></i>
+                Cancelling...
+              }
+            </button>
+          }
 
           <button
             class="btn button principal rounded-pill px-4"
-            [disabled]="seatsLeft <= 0 || !selectedSeats"
+            [disabled]="
+              (isProposedRide() && proposedJoinRole === 'CLIENT' && hasJoinedRide()) ||
+              (isProposedRide() && proposedJoinRole === 'DRIVER' && proposedDriverSeats <= 0) ||
+              (!isProposedRide() && (seatsLeft <= 0 || !selectedSeats))
+            "
             (click)="bookRide()"
           >
             @if(!loadingBooking) {
-              Book now
+              @if(isProposedRide()) {
+                @if(proposedJoinRole === 'DRIVER') {
+                  Create ride from proposal
+                } @else {
+                  Join
+                }
+              } @else {
+                Book now
+              }
             }
 
             @if(loadingBooking) {
               <i class="spinner-border spinner-border-sm me-2"></i>
-              Booking...
+              Processing...
             }
           </button>
         </div>
@@ -176,7 +261,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
           <div class="d-flex align-items-center">
             <img src="/logo_tugo.svg" alt="Tugo" style="width: 4rem; height:auto;" class="me-3">
-            <h5 class="modal-title fw-bold mb-0">Facture</h5>
+            <h5 class="modal-title fw-bold mb-0">Invoice</h5>
           </div>
           <div class="text-muted small">
             Date: {{ today | date:'dd MMM yyyy, HH:mm' }}

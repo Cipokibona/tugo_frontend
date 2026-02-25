@@ -1,0 +1,116 @@
+.nav-shell {
+  position: sticky;
+  top: 0;
+  z-index: 1040;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #111827, #1f2937);
+}
+
+.nav-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.brand-logo {
+  width: 2.2rem;
+  height: auto;
+}
+
+.brand-title {
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.brand-subtitle {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.menu-toggle {
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.menu-panel {
+  margin: 0.4rem 0.5rem 0;
+  border-radius: 0.95rem;
+  padding: 0.9rem;
+  background: linear-gradient(135deg, #0f172a, #111827);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.menu-grid {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.menu-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.7rem;
+  color: #f9fafb;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.menu-link.active {
+  background: linear-gradient(135deg, #ff7200, #ff4500);
+  border-color: transparent;
+}
+
+.menu-link:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.about-box {
+  margin-top: 0.85rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.7rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.about-title {
+  color: #ffffff;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.logout-btn {
+  width: 100%;
+  margin-top: 0.85rem;
+  border: none;
+  border-radius: 0.7rem;
+  padding: 0.58rem 0.7rem;
+  background: #dc2626;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}

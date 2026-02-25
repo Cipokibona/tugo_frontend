@@ -6,6 +6,8 @@ import { DetailsTrip } from './components/details-trip/details-trip';
 import { Chat } from './components/chat/chat';
 import { FormTrip } from './components/form-trip/form-trip';
 import { HomeAdmin } from './components/home-admin/home-admin';
+import { Notifications } from './components/notifications/notifications';
+import { AboutUs } from './components/about-us/about-us';
 
 export const routes: Routes = [
   {
@@ -42,5 +44,13 @@ export const routes: Routes = [
   {
     path: 'form-trip',
     component: FormTrip
+  },
+  {
+    path: 'notifications',
+    component: Notifications
+  },
+  {
+    path: 'about-us',
+    component: AboutUs
   }
 ];
