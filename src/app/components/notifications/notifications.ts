@@ -125,6 +125,35 @@ export class Notifications implements OnInit {
     return Number.isNaN(rideId) ? null : rideId;
   }
 
+  canRespondToTaxiRequest(notification: any): boolean {
+    return (
+      notification?.notification_type === 'SERVICE_TAXI_REQUESTED' &&
+      notification?.action_required === true &&
+      !!notification?.service_taxi
+    );
+  }
+
+  respondToTaxiRequest(notification: any, decision: 'ACCEPT' | 'REJECT', event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!notification?.service_taxi) return;
+
+    this.service.respondToTaxiRequest(notification.service_taxi, decision).subscribe({
+      next: () => {
+        this.notifications = this.notifications.map((item: any) =>
+          item.id === notification.id
+            ? { ...item, is_read: true, action_required: false }
+            : item
+        );
+        this.loadData();
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.detail || error?.detail || 'Unable to respond to taxi request';
+      },
+    });
+  }
+
   get unreadNotificationsCount(): number {
     return this.notifications.filter((notification: any) => !notification?.is_read).length;
   }

@@ -1,0 +1,197 @@
+<div class="container-fluid background min-vh-100 p-3">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 class="fw-bold mb-1">Taxi Service</h4>
+      <p class="text-muted small mb-0">Browse models, open details on click, and call a taxi.</p>
+    </div>
+    <button class="btn button principal btn-sm rounded-pill" (click)="toggleAddTaxiForm()">
+      <i class="fa fa-plus me-1"></i>
+      Add Taxi
+    </button>
+  </div>
+
+  @if(errorMessage) {
+    <div class="alert alert-danger py-2">{{ errorMessage }}</div>
+  }
+  @if(successMessage) {
+    <div class="alert alert-success py-2">{{ successMessage }}</div>
+  }
+
+  @if(showAddForm) {
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 blackOrWhite">
+      <h6 class="fw-bold mb-3">Add Taxi</h6>
+      <form [formGroup]="taxiForm" (ngSubmit)="onSubmitTaxi()">
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label small mb-1">License Plate</label>
+            <input class="form-control" type="text" formControlName="license_plate_number" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small mb-1">Vehicle Model</label>
+            <input class="form-control" type="text" formControlName="vehicle_model" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-1">Seats</label>
+            <input class="form-control" type="number" formControlName="number_of_seats" min="1" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-1">Color</label>
+            <input class="form-control" type="text" formControlName="color" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-1">Year</label>
+            <input class="form-control" type="number" formControlName="vehicle_year" min="1980" />
+          </div>
+          <div class="col-12">
+            <label class="form-label small mb-1">Image URL</label>
+            <input class="form-control" type="url" formControlName="image" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small mb-1">Latitude</label>
+            <input class="form-control" type="number" step="any" formControlName="latitude" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small mb-1">Longitude</label>
+            <input class="form-control" type="number" step="any" formControlName="longitude" />
+          </div>
+          <div class="col-12">
+            <label class="form-label small mb-1">Location Label</label>
+            <input class="form-control" type="text" formControlName="location_label" placeholder="Ex: Bujumbura city center" />
+          </div>
+          <div class="col-12">
+            <label class="form-label small mb-1">Details</label>
+            <textarea class="form-control" rows="3" formControlName="additional_details"></textarea>
+          </div>
+          <div class="col-12 d-flex justify-content-end">
+            <button class="btn button principal rounded-pill px-4" [disabled]="submitting">
+              @if(submitting) {Saving...} @else {Save Taxi}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  }
+
+  <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 blackOrWhite">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="fw-bold mb-0">Nearby Taxis</h6>
+      <button class="btn btn-outline-secondary btn-sm rounded-pill" (click)="findNearbyTaxis()" [disabled]="loadingNearby">
+        @if(loadingNearby) {Locating...} @else {Find Nearby}
+      </button>
+    </div>
+
+    @if(nearbyTaxis.length === 0) {
+      <div class="text-muted small">No nearby taxis yet. Tap "Find Nearby" to search around your location.</div>
+    } @else {
+      <div class="taxi-list">
+        @for(taxi of nearbyTaxis; track taxi.id) {
+          <div class="taxi-list-item">
+            <button class="taxi-row" (click)="toggleDetails('nearby', taxi.id)">
+              <span class="fw-semibold">{{ taxi.vehicle_model }}</span>
+              <i class="fa" [class.fa-chevron-down]="!isExpanded('nearby', taxi.id)" [class.fa-chevron-up]="isExpanded('nearby', taxi.id)"></i>
+            </button>
+
+            @if(isExpanded('nearby', taxi.id)) {
+              <div class="taxi-details">
+                <div class="small text-muted mb-1">Plate: {{ taxi.license_plate_number }}</div>
+                <div class="small">Seats: {{ taxi.number_of_seats }}</div>
+                <div class="small">Driver: {{ taxi.driver_username || 'Unknown' }}</div>
+                @if(taxi.location_label) {
+                  <div class="small text-muted">{{ taxi.location_label }}</div>
+                }
+
+                @if(!isOwnTaxi(taxi)) {
+                  <button class="btn button principal btn-sm rounded-pill mt-2" (click)="openCallTaxiForm(taxi)">
+                    Call Taxi
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="fw-bold mb-0">Available Taxis</h6>
+      <button class="btn btn-outline-secondary btn-sm rounded-pill" (click)="loadAvailableTaxis()" [disabled]="loading">
+        Refresh
+      </button>
+    </div>
+
+    @if(loading) {
+      <div class="small text-muted">Loading available taxis...</div>
+    } @else if(availableTaxis.length === 0) {
+      <div class="text-muted small">No taxi available for now.</div>
+    } @else {
+      <div class="taxi-list">
+        @for(taxi of availableTaxis; track taxi.id) {
+          <div class="taxi-list-item">
+            <button class="taxi-row" (click)="toggleDetails('available', taxi.id)">
+              <span class="fw-semibold">{{ taxi.vehicle_model }}</span>
+              <i class="fa" [class.fa-chevron-down]="!isExpanded('available', taxi.id)" [class.fa-chevron-up]="isExpanded('available', taxi.id)"></i>
+            </button>
+
+            @if(isExpanded('available', taxi.id)) {
+              <div class="taxi-details">
+                <div class="small text-muted mb-1">Plate: {{ taxi.license_plate_number }}</div>
+                <div class="small">Seats: {{ taxi.number_of_seats }}</div>
+                <div class="small">Driver: {{ taxi.driver_username || 'Unknown' }}</div>
+                @if(taxi.location_label) {
+                  <div class="small text-muted">{{ taxi.location_label }}</div>
+                }
+                @if(taxi.additional_details) {
+                  <div class="small mt-1">{{ taxi.additional_details }}</div>
+                }
+
+                @if(!isOwnTaxi(taxi)) {
+                  <button class="btn button principal btn-sm rounded-pill mt-2" (click)="openCallTaxiForm(taxi)">
+                    Call Taxi
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  @if(selectedTaxiForRequest) {
+    <div class="card border-0 shadow-sm rounded-4 p-3 mt-4 blackOrWhite">
+      <h6 class="fw-bold mb-3">Call Taxi - {{ selectedTaxiForRequest.vehicle_model }}</h6>
+      <form [formGroup]="callTaxiForm" (ngSubmit)="submitCallTaxiRequest()">
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label small mb-1">Pickup Location</label>
+            <input class="form-control" type="text" formControlName="pickup_location" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small mb-1">Dropoff Location</label>
+            <input class="form-control" type="text" formControlName="dropoff_location" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small mb-1">Pickup Date</label>
+            <input class="form-control" type="date" formControlName="pickup_date" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small mb-1">Pickup Time</label>
+            <input class="form-control" type="time" formControlName="pickup_time" />
+          </div>
+          <div class="col-12">
+            <label class="form-label small mb-1">Notes</label>
+            <textarea class="form-control" rows="2" formControlName="notes"></textarea>
+          </div>
+          <div class="col-12 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary rounded-pill" (click)="cancelCallTaxiForm()">Cancel</button>
+            <button class="btn button principal rounded-pill" [disabled]="submittingRequest">
+              @if(submittingRequest) {Sending...} @else {Send request}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  }
+</div>

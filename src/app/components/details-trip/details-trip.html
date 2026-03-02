@@ -22,17 +22,17 @@
 
     <div class="row small text-muted">
       <div class="col-6">
-        <i class="bi bi-calendar"></i> {{ ride?.departure_date | date:'dd MMM yyyy' }}
+        <i class="fa fa-calendar"></i> {{ ride?.departure_date | date:'dd MMM yyyy' }}
       </div>
       <div class="col-6">
-        <i class="bi bi-clock"></i> {{ ride?.departure_time }}
+        <i class="fa fa-clock"></i> {{ ride?.departure_time }}
       </div>
       <div class="col-6 mt-2">
-        <i class="bi bi-geo-alt"></i>
+        <i class="fa fa-location-dot"></i>
         {{ ride?.distance_km ? (ride.distance_km + ' km') : 'Distance inconnue' }}
       </div>
       <div class="col-6 mt-2">
-        <i class="bi bi-people"></i>
+        <i class="fa fa-users"></i>
         @if(isProposedRide()) {
           {{ joinedUsersCount }} joined
         } @else {

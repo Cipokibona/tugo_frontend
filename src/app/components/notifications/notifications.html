@@ -58,6 +58,24 @@
                   }
                 </div>
                 <div class="small text-muted">{{ notificationMessage(notification) }}</div>
+                @if(canRespondToTaxiRequest(notification)) {
+                  <div class="d-flex gap-2 mt-2">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-success rounded-pill"
+                      (click)="respondToTaxiRequest(notification, 'ACCEPT', $event)"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-danger rounded-pill"
+                      (click)="respondToTaxiRequest(notification, 'REJECT', $event)"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                }
                 <div class="time small text-muted">
                   {{ notification.sender_username || 'System' }} • {{ messageTime(notification) }}
                 </div>

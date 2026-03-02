@@ -1,0 +1,32 @@
+.taxi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.taxi-list-item {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.8rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.taxi-row {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0.8rem 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+}
+
+.taxi-details {
+  padding: 0 0.9rem 0.9rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.form-label {
+  font-weight: 600;
+}

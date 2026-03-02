@@ -8,6 +8,7 @@ import { FormTrip } from './components/form-trip/form-trip';
 import { HomeAdmin } from './components/home-admin/home-admin';
 import { Notifications } from './components/notifications/notifications';
 import { AboutUs } from './components/about-us/about-us';
+import { Taxi } from './components/taxi/taxi';
 
 export const routes: Routes = [
   {
@@ -52,5 +53,9 @@ export const routes: Routes = [
   {
     path: 'about-us',
     component: AboutUs
+  },
+  {
+    path: 'taxi',
+    component: Taxi
   }
 ];
