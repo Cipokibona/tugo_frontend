@@ -146,7 +146,18 @@ export class Notifications implements OnInit {
             ? { ...item, is_read: true, action_required: false }
             : item
         );
-        this.loadData();
+        this.service.getNotifications().subscribe({
+          next: (notifications) => {
+            this.notifications = [...(notifications || [])].sort((a: any, b: any) => {
+              const timeA = new Date(a.created_at || a.createdAt || 0).getTime();
+              const timeB = new Date(b.created_at || b.createdAt || 0).getTime();
+              return timeB - timeA;
+            });
+          },
+          error: () => {
+            // Keep local state if refresh fails.
+          },
+        });
       },
       error: (error) => {
         this.errorMessage = error?.error?.detail || error?.detail || 'Unable to respond to taxi request';

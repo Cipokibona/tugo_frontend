@@ -1,12 +1,17 @@
-import { Location } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+﻿import { Location, isPlatformBrowser } from '@angular/common';
+import {
+  AfterViewInit,
+  Component,
+  OnDestroy,
+  OnInit,
+  PLATFORM_ID,
+  inject,
+} from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { isPlatformBrowser } from '@angular/common';
-import { PLATFORM_ID, inject } from '@angular/core';
-import { ServiceApi } from '../../services/service-api';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { Router } from '@angular/router';
+import { ServiceApi } from '../../services/service-api';
 
 @Component({
   selector: 'app-form-trip',
@@ -14,18 +19,36 @@ import { Router } from '@angular/router';
   templateUrl: './form-trip.html',
   styleUrl: './form-trip.scss',
 })
-export class FormTrip implements OnInit {
-
+export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
   rideForm!: FormGroup;
   userRole: 'DRIVER' | 'CLIENT' = 'DRIVER';
   platformId = inject(PLATFORM_ID);
+
   map: any;
   private L: any;
+  markerLayer: any;
   routeLayer: any;
+  routePolylines: any[] = [];
+
+  startPoint: { lat: number; lon: number } | null = null;
+  endPoint: { lat: number; lon: number } | null = null;
+  startMarker: any | null = null;
+  endMarker: any | null = null;
+  mapSelectMode: 'START' | 'END' | null = null;
+
   loading = false;
+  routeLoading = false;
   errorMessage: string | null = null;
 
   user: any | null = null;
+
+  routeOptions: Array<{
+    index: number;
+    coords: [number, number][];
+    distanceKm: number;
+    durationMin: number;
+  }> = [];
+  selectedRouteIndex = 0;
 
   constructor(
     private location: Location,
@@ -35,30 +58,8 @@ export class FormTrip implements OnInit {
     private router: Router
   ) {}
 
-  // async initMap() {
-  //   if (!isPlatformBrowser(this.platformId)) return;
-
-  //   this.L = await import('leaflet');
-
-  //   // Hauteur responsive
-  //   const mapDiv = document.getElementById('map');
-  //   if (mapDiv) {
-  //     const height = Math.min(window.innerHeight * 0.35, 450);
-  //     mapDiv.style.height = `${height}px`;
-  //   }
-
-  //   this.map = this.L.map('map', { zoomControl: false }).setView([-3.38, 29.36], 7);
-
-  //   this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-  //     .addTo(this.map);
-
-  //   this.routeLayer = this.L.layerGroup().addTo(this.map);
-
-  //   setTimeout(() => this.map.invalidateSize(), 200);
-  // }
-
-  goBack(): void {
-    this.location.back();
+  async ngAfterViewInit() {
+    await this.initMap();
   }
 
   ngOnInit() {
@@ -66,18 +67,41 @@ export class FormTrip implements OnInit {
     this.initForm();
   }
 
-  // ngAfterViewInit() {
-  //   this.initMap();
-  // }
+  ngOnDestroy(): void {
+    if (this.map) {
+      this.map.remove();
+    }
+  }
 
-  getUser(){
+  async initMap() {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    this.L = await import('leaflet');
+    this.map = this.L.map('trip-map', { zoomControl: true }).setView([-3.38, 29.36], 7);
+
+    this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(this.map);
+
+    this.markerLayer = this.L.layerGroup().addTo(this.map);
+    this.routeLayer = this.L.layerGroup().addTo(this.map);
+
+    this.map.on('click', (e: any) => this.handleMapClick(e));
+    setTimeout(() => this.map.invalidateSize(), 200);
+  }
+
+  goBack(): void {
+    this.location.back();
+  }
+
+  getUser() {
     this.service.getUser().subscribe({
-      next:user=>{
-        this.user=user;
-        console.log("utilisateur connecte",this.user);
+      next: (user) => {
+        this.user = user;
       },
-      error: err =>console.log("erreur pour l'utilisateur connecte",err)
-    })
+      error: (err) => console.log("erreur pour l'utilisateur connecte", err),
+    });
   }
 
   initForm() {
@@ -88,9 +112,11 @@ export class FormTrip implements OnInit {
       departure_time: ['', Validators.required],
       price: [0, [Validators.required, Validators.min(1)]],
       available_seats: [1, Validators.required],
+      distance_km: [null as number | null],
+      route_coords: [null as [number, number][] | null],
       vehicule: ['', Validators.required],
       note: [''],
-      status: ['OPEN']
+      status: ['OPEN'],
     });
   }
 
@@ -131,57 +157,239 @@ export class FormTrip implements OnInit {
     return this.userRole === 'DRIVER';
   }
 
-  // Charger l’itinéraire et choisir la meilleure route
+  setMapSelectMode(mode: 'START' | 'END') {
+    this.mapSelectMode = mode;
+  }
+
+  clearMapSelection() {
+    this.startPoint = null;
+    this.endPoint = null;
+    this.routeOptions = [];
+    this.routePolylines = [];
+    this.selectedRouteIndex = 0;
+
+    this.rideForm.patchValue({
+      from_city: '',
+      to_city: '',
+      route_coords: null,
+      distance_km: null,
+    });
+
+    this.markerLayer?.clearLayers();
+    this.routeLayer?.clearLayers();
+    this.startMarker = null;
+    this.endMarker = null;
+  }
+
+  handleMapClick(event: any) {
+    if (!this.map || !this.L) return;
+
+    const clicked = { lat: event.latlng.lat, lon: event.latlng.lng };
+
+    if (this.mapSelectMode === 'START') {
+      this.startPoint = clicked;
+      this.mapSelectMode = 'END';
+      this.updateMarker('START', clicked);
+      this.reverseGeocodeAndPatch(clicked, 'from_city');
+      return;
+    }
+
+    if (this.mapSelectMode === 'END') {
+      this.endPoint = clicked;
+      this.mapSelectMode = null;
+      this.updateMarker('END', clicked);
+      this.reverseGeocodeAndPatch(clicked, 'to_city', true);
+      return;
+    }
+
+    if (!this.startPoint) {
+      this.startPoint = clicked;
+      this.updateMarker('START', clicked);
+      this.reverseGeocodeAndPatch(clicked, 'from_city');
+      return;
+    }
+
+    if (!this.endPoint) {
+      this.endPoint = clicked;
+      this.updateMarker('END', clicked);
+      this.reverseGeocodeAndPatch(clicked, 'to_city', true);
+      return;
+    }
+
+    // If both are already selected, clicking again updates destination by default.
+    this.endPoint = clicked;
+    this.updateMarker('END', clicked);
+    this.reverseGeocodeAndPatch(clicked, 'to_city', true);
+  }
+
+  updateMarker(type: 'START' | 'END', point: { lat: number; lon: number }) {
+    if (type === 'START') {
+      if (this.startMarker) this.markerLayer.removeLayer(this.startMarker);
+      this.startMarker = this.L.circleMarker([point.lat, point.lon], {
+        radius: 7,
+        color: '#16a34a',
+      }).addTo(this.markerLayer);
+    } else {
+      if (this.endMarker) this.markerLayer.removeLayer(this.endMarker);
+      this.endMarker = this.L.circleMarker([point.lat, point.lon], {
+        radius: 7,
+        color: '#dc2626',
+      }).addTo(this.markerLayer);
+    }
+  }
+
+  reverseGeocodeAndPatch(
+    point: { lat: number; lon: number },
+    controlName: 'from_city' | 'to_city',
+    loadAfterPatch = false
+  ) {
+    const reverseUrl =
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${point.lat}&lon=${point.lon}`;
+
+    this.http.get<any>(reverseUrl).subscribe({
+      next: (resp) => {
+        const address = resp?.address || {};
+        const cityName =
+          address.city ||
+          address.town ||
+          address.village ||
+          address.county ||
+          resp?.display_name ||
+          `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`;
+
+        this.rideForm.patchValue({ [controlName]: cityName });
+        if (loadAfterPatch && this.startPoint && this.endPoint) {
+          this.loadRouteFromPoints(this.startPoint, this.endPoint);
+        }
+      },
+      error: () => {
+        this.rideForm.patchValue({ [controlName]: `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}` });
+        if (loadAfterPatch && this.startPoint && this.endPoint) {
+          this.loadRouteFromPoints(this.startPoint, this.endPoint);
+        }
+      },
+    });
+  }
+
   loadRoute() {
     if (!this.L || !this.map) return;
+
+    if (this.startPoint && this.endPoint) {
+      this.loadRouteFromPoints(this.startPoint, this.endPoint);
+      return;
+    }
 
     const { from_city, to_city } = this.rideForm.value;
     if (!from_city || !to_city) return;
 
-    // 1️⃣ Geocoding pour obtenir plusieurs options de départ/arrivée
-    const from$ = this.http.get<any>(`https://nominatim.openstreetmap.org/search?q=${from_city}&format=json`);
-    const to$ = this.http.get<any>(`https://nominatim.openstreetmap.org/search?q=${to_city}&format=json`);
+    this.routeLoading = true;
+    this.errorMessage = null;
 
-    forkJoin([from$, to$]).subscribe(([startOptions, endOptions]) => {
-      if (!startOptions.length || !endOptions.length) return;
+    const from$ = this.http.get<any>(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(from_city)}&format=json&limit=1`
+    );
+    const to$ = this.http.get<any>(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(to_city)}&format=json&limit=1`
+    );
 
-      // Ici tu peux choisir la première option, ou implémenter une logique pour choisir
-      const start = startOptions[0];
-      const end = endOptions[0];
+    forkJoin([from$, to$]).subscribe({
+      next: ([startOptions, endOptions]) => {
+        if (!startOptions.length || !endOptions.length) {
+          this.routeLoading = false;
+          this.errorMessage = 'Unable to find cities on map.';
+          return;
+        }
 
-      const startLatLng = this.L.latLng(start.lat, start.lon);
-      const endLatLng = this.L.latLng(end.lat, end.lon);
+        const start = { lat: Number(startOptions[0].lat), lon: Number(startOptions[0].lon) };
+        const end = { lat: Number(endOptions[0].lat), lon: Number(endOptions[0].lon) };
 
-      this.routeLayer.clearLayers();
-      this.L.marker(startLatLng).addTo(this.routeLayer);
-      this.L.marker(endLatLng).addTo(this.routeLayer);
+        this.startPoint = start;
+        this.endPoint = end;
+        this.updateMarker('START', start);
+        this.updateMarker('END', end);
 
-      // 2️⃣ Utiliser OSRM pour récupérer plusieurs routes possibles
-      this.http.get<any>(`https://router.project-osrm.org/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}?overview=full&geometries=geojson`)
-        .subscribe(osrmData => {
-          if (!osrmData.routes || !osrmData.routes.length) return;
-
-          // Choisir la première route pour l’exemple
-          const chosenRoute = osrmData.routes[0].geometry.coordinates; // [[lon, lat], ...]
-
-          // Transformer en LatLng pour Leaflet
-          const latLngRoute = chosenRoute.map((c: [number, number]) => this.L.latLng(c[1], c[0]));
-
-          // Ajouter polyline
-          this.L.polyline(latLngRoute, { color: 'blue', weight: 4 }).addTo(this.routeLayer);
-
-          // Fit bounds
-          const bounds = this.L.latLngBounds(latLngRoute);
-          this.map.fitBounds(bounds, { padding: [30, 30] });
-
-          // Enregistrer route pour GeoDjango
-          this.rideForm.patchValue({
-            route_coords: chosenRoute // lon/lat pour backend
-          });
-
-          setTimeout(() => this.map.invalidateSize(), 200);
-        });
+        this.loadRouteFromPoints(start, end);
+      },
+      error: () => {
+        this.errorMessage = 'Unable to geocode selected cities.';
+        this.routeLoading = false;
+      },
     });
+  }
+
+  loadRouteFromPoints(start: { lat: number; lon: number }, end: { lat: number; lon: number }) {
+    this.routeLoading = true;
+    this.errorMessage = null;
+
+    this.routeLayer.clearLayers();
+    this.routePolylines = [];
+
+    const osrmUrl =
+      `https://router.project-osrm.org/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}` +
+      '?overview=full&alternatives=true&geometries=geojson&steps=false';
+
+    this.http.get<any>(osrmUrl).subscribe({
+      next: (osrmData) => {
+        if (!osrmData.routes || !osrmData.routes.length) {
+          this.errorMessage = 'No route found between these points.';
+          this.routeLoading = false;
+          return;
+        }
+
+        this.routeOptions = osrmData.routes.map((route: any, index: number) => ({
+          index,
+          coords: route.geometry.coordinates,
+          distanceKm: Math.max(1, Math.round((route.distance || 0) / 1000)),
+          durationMin: Math.max(1, Math.round((route.duration || 0) / 60)),
+        }));
+
+        this.routeOptions.forEach((routeOption, index) => {
+          const latLngRoute = routeOption.coords.map((c: [number, number]) =>
+            this.L.latLng(c[1], c[0])
+          );
+
+          const polyline = this.L.polyline(latLngRoute, {
+            color: index === 0 ? '#2563eb' : '#9ca3af',
+            weight: index === 0 ? 5 : 4,
+            opacity: index === 0 ? 0.95 : 0.7,
+          }).addTo(this.routeLayer);
+
+          polyline.on('click', () => this.selectRoute(index));
+          this.routePolylines.push(polyline);
+        });
+
+        this.selectRoute(0);
+        this.routeLoading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Unable to compute routes right now.';
+        this.routeLoading = false;
+      },
+    });
+  }
+
+  selectRoute(index: number) {
+    if (!this.routeOptions[index]) return;
+
+    this.selectedRouteIndex = index;
+
+    this.routePolylines.forEach((polyline, i) => {
+      polyline.setStyle({
+        color: i === index ? '#2563eb' : '#9ca3af',
+        weight: i === index ? 5 : 4,
+        opacity: i === index ? 0.95 : 0.7,
+      });
+    });
+
+    const selectedRoute = this.routeOptions[index];
+    this.rideForm.patchValue({
+      route_coords: selectedRoute.coords,
+      distance_km: selectedRoute.distanceKm,
+    });
+
+    if (this.routePolylines[index]) {
+      this.map.fitBounds(this.routePolylines[index].getBounds(), { padding: [30, 30] });
+    }
   }
 
   submit() {
@@ -190,19 +398,21 @@ export class FormTrip implements OnInit {
     const departureDate = this.rideForm.value.departure_date;
     const departureTime = this.rideForm.value.departure_time;
 
-    // Construire une vraie date complète (date + heure)
     const departureDateTime = new Date(`${departureDate}T${departureTime}`);
     const now = new Date();
 
-    // Vérifier si le temps de départ est déjà passé
     if (departureDateTime <= now) {
-      this.errorMessage = 'Impossible de créer un ride : l’heure de départ est déjà dépassée.';
+      this.errorMessage = 'Impossible de creer un ride : heure de depart deja depassee.';
+      return;
+    }
+
+    if (!this.rideForm.value.route_coords || this.rideForm.value.route_coords.length === 0) {
+      this.errorMessage = 'Please choose one route from the map before publishing.';
       return;
     }
 
     this.loading = true;
 
-    // Envoyer la route choisie au backend
     const basePayload = {
       ...this.rideForm.value,
       status: this.userRole === 'CLIENT' ? 'PROPOSED' : 'OPEN',
@@ -220,23 +430,19 @@ export class FormTrip implements OnInit {
           driver: this.user.id,
           proposer: null,
         };
-    console.log('Payload pour création de ride:', payload);
+
     this.service.createRide(payload).subscribe({
       next: () => {
         this.loading = false;
-        console.log('Ride créé avec succès');
-        // redirection vers home
         this.router.navigate(['/home']).then(() => {
           window.location.reload();
-          console.log('Navigation to /home successful');
         });
       },
-      error: (err) => {
+      error: () => {
         this.loading = false;
-        this.errorMessage = 'Erreur lors de la création du ride';
-        console.error('Erreur lors de la création du ride', err);
-      }
+        this.errorMessage = 'Erreur lors de la creation du ride';
+      },
     });
   }
-
 }
+

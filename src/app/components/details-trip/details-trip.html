@@ -43,6 +43,15 @@
   </div>
 
   <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
+    <h6 class="fw-semibold mb-2">Itinerary map</h6>
+    @if(ride?.route_coords?.length) {
+      <div id="ride-map" class="ride-map rounded-3 border"></div>
+    } @else {
+      <div class="small text-muted">No map route available for this itinerary.</div>
+    }
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
     <div class="d-flex align-items-center">
       <div class="avatar me-3">
         {{ (isProposedRide() ? (ride?.proposer_username || ride?.driver_username) : ride?.driver_username)?.charAt(0)?.toUpperCase() }}

@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { ServiceApi } from '../../services/service-api';
 import { Router, RouterLink } from '@angular/router';
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule, Location, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import jsPDF from 'jspdf';
@@ -12,7 +12,7 @@ import jsPDF from 'jspdf';
   templateUrl: './details-trip.html',
   styleUrl: './details-trip.scss',
 })
-export class DetailsTrip implements OnInit {
+export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
   ride: any | null = null;
   user: any | null = null;
   currentRideId: number | null = null;
@@ -36,12 +36,21 @@ export class DetailsTrip implements OnInit {
   invoiceData: any = null;
 
   today: Date = new Date();
+  platformId = inject(PLATFORM_ID);
+
+  map: any;
+  private L: any;
+  routeLayer: any;
 
   constructor(
     private service: ServiceApi,
     private router: Router,
     private location: Location,
   ) {}
+
+  async ngAfterViewInit() {
+    this.renderRideRoute();
+  }
 
   ngOnInit() {
     const rideId = Number(this.router.url.split('/').pop());
@@ -50,6 +59,66 @@ export class DetailsTrip implements OnInit {
     this.getUser();
     this.getRideDetails();
     this.getBookings();
+  }
+
+  ngOnDestroy(): void {
+    if (this.map) {
+      this.map.remove();
+    }
+  }
+
+  async initMap() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const container = document.getElementById('ride-map');
+    if (!container) return;
+    if (this.map) return;
+
+    this.L = await import('leaflet');
+    this.map = this.L.map('ride-map', { zoomControl: true }).setView([-3.38, 29.36], 7);
+    this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(this.map);
+    this.routeLayer = this.L.layerGroup().addTo(this.map);
+    setTimeout(() => this.map.invalidateSize(), 200);
+  }
+
+  async ensureMapReady(retries = 5, delayMs = 120): Promise<boolean> {
+    for (let i = 0; i < retries; i++) {
+      await this.initMap();
+      if (this.map && this.L && this.routeLayer) {
+        return true;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    return false;
+  }
+
+  async renderRideRoute() {
+    if (!this.ride?.route_coords?.length) return;
+    const ready = await this.ensureMapReady();
+    if (!ready || !this.map || !this.L || !this.routeLayer) return;
+
+    const coords = this.ride.route_coords as [number, number][];
+    const latLngRoute = coords
+      .filter((point) => Array.isArray(point) && point.length === 2)
+      .map((point) => this.L.latLng(point[1], point[0]));
+
+    if (!latLngRoute.length) return;
+
+    this.routeLayer.clearLayers();
+    this.L.polyline(latLngRoute, {
+      color: '#2563eb',
+      weight: 5,
+      opacity: 0.95,
+    }).addTo(this.routeLayer);
+
+    this.L.circleMarker(latLngRoute[0], { radius: 6, color: '#16a34a' }).addTo(this.routeLayer);
+    this.L.circleMarker(latLngRoute[latLngRoute.length - 1], { radius: 6, color: '#dc2626' }).addTo(this.routeLayer);
+
+    const bounds = this.L.latLngBounds(latLngRoute);
+    this.map.fitBounds(bounds, { padding: [30, 30] });
+    setTimeout(() => this.map.invalidateSize(), 120);
   }
 
   getUser() {
@@ -76,6 +145,7 @@ export class DetailsTrip implements OnInit {
           this.proposedDriverPrice = Number(ride?.price || 0);
         }
         this.loading = false;
+        this.renderRideRoute();
         console.log('Details de la course', this.ride);
       },
       error: err => {

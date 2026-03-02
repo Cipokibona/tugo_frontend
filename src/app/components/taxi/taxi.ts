@@ -23,6 +23,7 @@ export class Taxi implements OnInit {
   showAddForm = false;
   availableTaxis: any[] = [];
   nearbyTaxis: any[] = [];
+  serviceTaxiRequests: any[] = [];
   user: any | null = null;
 
   latitude: number | null = null;
@@ -75,10 +76,12 @@ export class Taxi implements OnInit {
     forkJoin({
       user: this.service.getUser(),
       taxis: this.service.getAvailableTaxis(),
+      serviceRequests: this.service.getServiceTaxis(),
     }).subscribe({
-      next: ({ user, taxis }) => {
+      next: ({ user, taxis, serviceRequests }) => {
         this.user = user;
         this.availableTaxis = taxis || [];
+        this.serviceTaxiRequests = serviceRequests || [];
         this.loading = false;
       },
       error: (error) => {
@@ -104,6 +107,17 @@ export class Taxi implements OnInit {
       error: (error) => {
         this.errorMessage = error?.detail || 'Unable to load available taxis.';
         this.loading = false;
+      },
+    });
+  }
+
+  loadServiceTaxiRequests(): void {
+    this.service.getServiceTaxis().subscribe({
+      next: (data) => {
+        this.serviceTaxiRequests = data || [];
+      },
+      error: () => {
+        this.serviceTaxiRequests = [];
       },
     });
   }
@@ -203,6 +217,7 @@ export class Taxi implements OnInit {
         this.submittingRequest = false;
         this.successMessage = 'Taxi request sent. The driver will accept or reject soon.';
         this.selectedTaxiForRequest = null;
+        this.loadServiceTaxiRequests();
       },
       error: (error) => {
         this.submittingRequest = false;
@@ -240,5 +255,27 @@ export class Taxi implements OnInit {
         this.errorMessage = error?.error?.detail || 'Unable to create taxi.';
       },
     });
+  }
+
+  statusClass(status: string): string {
+    switch (status) {
+      case 'ACCEPTED':
+        return 'text-bg-success';
+      case 'REQUESTED':
+        return 'text-bg-warning';
+      case 'CANCELLED':
+        return 'text-bg-danger';
+      case 'COMPLETED':
+        return 'text-bg-primary';
+      case 'IN_PROGRESS':
+        return 'text-bg-info';
+      default:
+        return 'text-bg-secondary';
+    }
+  }
+
+  requestRoleLabel(request: any): string {
+    if (!this.user) return 'Taxi request';
+    return request?.client === this.user.id ? 'My request' : 'Incoming request';
   }
 }

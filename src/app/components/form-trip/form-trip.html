@@ -1,4 +1,4 @@
-<div class="container-fluid background min-vh-100 p-3">
+﻿<div class="container-fluid background min-vh-100 p-3">
 
   <div class="d-flex align-items-center mb-4">
     <button
@@ -70,6 +70,70 @@
             required
           >
         </div>
+      </div>
+
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+          <label class="small fw-semibold mb-0">Route map</label>
+          <div class="d-flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="btn btn-outline-success btn-sm rounded-pill"
+              [class.active-select]="mapSelectMode === 'START'"
+              (click)="setMapSelectMode('START')"
+            >
+              Pick departure
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-danger btn-sm rounded-pill"
+              [class.active-select]="mapSelectMode === 'END'"
+              (click)="setMapSelectMode('END')"
+            >
+              Pick destination
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm rounded-pill"
+              (click)="clearMapSelection()"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm rounded-pill"
+              (click)="loadRoute()"
+              [disabled]="routeLoading"
+            >
+              @if(routeLoading) { Loading routes... } @else { Refresh routes }
+            </button>
+          </div>
+        </div>
+        <div id="trip-map" class="map-container rounded-3 border"></div>
+        <div class="small text-muted mt-2">
+          Click on the map to choose departure and destination points directly.
+        </div>
+
+        @if(routeOptions.length > 0) {
+          <div class="route-options mt-2">
+            <div class="small text-muted mb-1">Choose one itinerary:</div>
+            <div class="d-flex flex-column gap-2">
+              @for(route of routeOptions; track route.index) {
+                <button
+                  type="button"
+                  class="route-option"
+                  [class.active]="selectedRouteIndex === route.index"
+                  (click)="selectRoute(route.index)"
+                >
+                  <span class="fw-semibold">Route {{ route.index + 1 }}</span>
+                  <span class="small text-muted">{{ route.distanceKm }} km • {{ route.durationMin }} min</span>
+                </button>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="small text-muted mt-2">Enter departure and destination to generate route options.</div>
+        }
       </div>
 
       <div class="row">

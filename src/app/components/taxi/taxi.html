@@ -159,39 +159,85 @@
     }
   </div>
 
+  <div class="card border-0 shadow-sm rounded-4 p-3 mt-4 blackOrWhite">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="fw-bold mb-0">Taxi Requests</h6>
+      <button class="btn btn-outline-secondary btn-sm rounded-pill" (click)="loadServiceTaxiRequests()">
+        Refresh
+      </button>
+    </div>
+
+    @if(serviceTaxiRequests.length === 0) {
+      <div class="small text-muted">No taxi requests yet.</div>
+    } @else {
+      <div class="request-list">
+        @for(request of serviceTaxiRequests; track request.id) {
+          <div class="request-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="small fw-semibold">{{ requestRoleLabel(request) }}</div>
+              <span class="badge" [ngClass]="statusClass(request.status)">
+                {{ request.status }}
+              </span>
+            </div>
+            <div class="small mt-1">
+              <strong>Taxi:</strong> {{ request?.taxi_details?.vehicle_model || 'Unknown' }}
+            </div>
+            <div class="small">
+              <strong>Pickup:</strong> {{ request.pickup_location }}
+            </div>
+            <div class="small">
+              <strong>Dropoff:</strong> {{ request.dropoff_location }}
+            </div>
+            <div class="small text-muted">
+              {{ request.pickup_date || 'N/A' }} at {{ request.pickup_time || 'N/A' }}
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
   @if(selectedTaxiForRequest) {
-    <div class="card border-0 shadow-sm rounded-4 p-3 mt-4 blackOrWhite">
-      <h6 class="fw-bold mb-3">Call Taxi - {{ selectedTaxiForRequest.vehicle_model }}</h6>
-      <form [formGroup]="callTaxiForm" (ngSubmit)="submitCallTaxiRequest()">
-        <div class="row g-2">
-          <div class="col-md-6">
-            <label class="form-label small mb-1">Pickup Location</label>
-            <input class="form-control" type="text" formControlName="pickup_location" />
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 p-3 blackOrWhite">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold mb-0">Call Taxi - {{ selectedTaxiForRequest.vehicle_model }}</h6>
+            <button type="button" class="btn-close" (click)="cancelCallTaxiForm()"></button>
           </div>
-          <div class="col-md-6">
-            <label class="form-label small mb-1">Dropoff Location</label>
-            <input class="form-control" type="text" formControlName="dropoff_location" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label small mb-1">Pickup Date</label>
-            <input class="form-control" type="date" formControlName="pickup_date" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label small mb-1">Pickup Time</label>
-            <input class="form-control" type="time" formControlName="pickup_time" />
-          </div>
-          <div class="col-12">
-            <label class="form-label small mb-1">Notes</label>
-            <textarea class="form-control" rows="2" formControlName="notes"></textarea>
-          </div>
-          <div class="col-12 d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-outline-secondary rounded-pill" (click)="cancelCallTaxiForm()">Cancel</button>
-            <button class="btn button principal rounded-pill" [disabled]="submittingRequest">
-              @if(submittingRequest) {Sending...} @else {Send request}
-            </button>
-          </div>
+
+          <form [formGroup]="callTaxiForm" (ngSubmit)="submitCallTaxiRequest()">
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label small mb-1">Pickup Location</label>
+                <input class="form-control" type="text" formControlName="pickup_location" />
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1">Dropoff Location</label>
+                <input class="form-control" type="text" formControlName="dropoff_location" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small mb-1">Pickup Date</label>
+                <input class="form-control" type="date" formControlName="pickup_date" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small mb-1">Pickup Time</label>
+                <input class="form-control" type="time" formControlName="pickup_time" />
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1">Notes</label>
+                <textarea class="form-control" rows="2" formControlName="notes"></textarea>
+              </div>
+              <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill" (click)="cancelCallTaxiForm()">Cancel</button>
+                <button class="btn button principal rounded-pill" [disabled]="submittingRequest">
+                  @if(submittingRequest) {Sending...} @else {Send request}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   }
 </div>
