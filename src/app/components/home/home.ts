@@ -3,10 +3,11 @@ import { ServiceApi } from '../../services/service-api';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TranslatePipe],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -86,10 +87,6 @@ export class Home implements OnInit {
         this.loadingBookings = false;
       },
       error: (error) => {
-        if (error?.status === 401) {
-          this.router.navigate(['/login']);
-          return;
-        }
         this.errorPage = error?.detail || 'Error loading page';
         this.loading = false;
         this.loadingBookings = false;
@@ -110,10 +107,6 @@ export class Home implements OnInit {
         this.getBookingsForCurrentUser();
       },
       error: err => {
-        if (err?.status === 401) {
-          this.router.navigate(['/login']);
-          return;
-        }
         console.log("erreur pour l'utilisateur connecte", err);
       }
     });

@@ -23,6 +23,19 @@
 
 <div class="collapse" id="navbarToggleExternalContent">
   <div class="menu-panel">
+    <div class="language-row">
+      <label for="language-select">{{ 'language.label' | t }}</label>
+      <select
+        id="language-select"
+        class="language-select"
+        [value]="languageService.currentLanguage"
+        (change)="onLanguageChange($event)"
+      >
+        <option value="en">{{ 'language.english' | t }}</option>
+        <option value="fr">{{ 'language.french' | t }}</option>
+      </select>
+    </div>
+
     <div class="menu-grid">
       <a
         class="menu-link"
@@ -33,7 +46,7 @@
         data-bs-target="#navbarToggleExternalContent"
       >
         <i class="fa fa-house"></i>
-        <span>Home</span>
+        <span>{{ 'nav.home' | t }}</span>
       </a>
 
       <a
@@ -45,7 +58,7 @@
       >
         <i class="fa fa-bell"></i>
         <span class="d-inline-flex align-items-center gap-2">
-          <span>Notifications</span>
+          <span>{{ 'nav.notifications' | t }}</span>
           @if(unreadNotificationsCount > 0) {
             <span class="badge rounded-pill text-bg-danger">{{ unreadNotificationsCount }}</span>
           }
@@ -60,7 +73,7 @@
         data-bs-target="#navbarToggleExternalContent"
       >
         <i class="fa fa-taxi"></i>
-        <span>Taxi</span>
+        <span>{{ 'nav.taxi' | t }}</span>
       </a>
 
       <!--
@@ -85,13 +98,13 @@
         data-bs-target="#navbarToggleExternalContent"
       >
         <i class="fa fa-address-card"></i>
-        <span>Contact us</span>
+        <span>{{ 'nav.contact' | t }}</span>
       </a>
     </div>
 
     <button class="logout-btn" (click)="logout()">
       <i class="fa fa-right-from-bracket"></i>
-      <span>Logout</span>
+      <span>{{ 'nav.logout' | t }}</span>
     </button>
   </div>
 </div>

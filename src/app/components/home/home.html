@@ -3,8 +3,8 @@
   <!-- Header -->
   <div class="row mb-4 align-items-center">
     <div class="col-8">
-      <h4 class="fw-bold mb-0">Available rides</h4>
-      <p class="text-muted small">Find a ride near you</p>
+      <h4 class="fw-bold mb-0">{{ 'home.available' | t }}</h4>
+      <p class="text-muted small">{{ 'home.find_near' | t }}</p>
     </div>
     <div class="col-4 text-end">
       <a [routerLink]="['/notifications']" class="btn btn-sm btn-outline-secondary rounded-pill">
@@ -20,10 +20,10 @@
   <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 blackOrWhite">
     <div class="row g-2">
       <div class="col-md-4">
-        <input type="text" class="form-control form-control-sm" placeholder="From">
+        <input type="text" class="form-control form-control-sm" [placeholder]="'home.from' | t">
       </div>
       <div class="col-md-4">
-        <input type="text" class="form-control form-control-sm" placeholder="To">
+        <input type="text" class="form-control form-control-sm" [placeholder]="'home.to' | t">
       </div>
       <div class="col-md-3">
         <input type="date" class="form-control form-control-sm">
@@ -45,7 +45,7 @@
           [class.active]="activeTab === 'ALL'"
           (click)="activeTab='ALL'; applyRideFilter()"
         >
-          All itineraries
+          {{ 'home.all_itineraries' | t }}
         </a>
       </li>
 
@@ -55,7 +55,7 @@
           [class.active]="activeTab === 'USER'"
           (click)="activeTab='USER'; applyRideFilter()"
         >
-          Users itineraries
+          {{ 'home.user_itineraries' | t }}
         </a>
       </li>
 
@@ -65,7 +65,7 @@
           [class.active]="activeTab === 'PROPOSED'"
           (click)="activeTab='PROPOSED'; applyRideFilter()"
         >
-          Proposed itineraries
+          {{ 'home.proposed_itineraries' | t }}
         </a>
       </li>
     </ul>
@@ -74,25 +74,25 @@
   @if(activeTab === 'USER'){
     <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 blackOrWhite">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="fw-bold mb-0">My bookings</h6>
+        <h6 class="fw-bold mb-0">{{ 'home.my_bookings' | t }}</h6>
         <span class="badge text-bg-light">{{ userBookings.length }}</span>
       </div>
 
       @if(loadingBookings){
-        <div class="small text-muted">Loading your bookings...</div>
+        <div class="small text-muted">{{ 'home.loading_bookings' | t }}</div>
       } @else if (bookingError) {
         <div class="small text-danger">{{ bookingError }}</div>
       } @else if (userBookings.length === 0) {
-        <div class="small text-muted">You do not have a booking yet.</div>
+        <div class="small text-muted">{{ 'home.no_bookings' | t }}</div>
       } @else {
         <div class="row g-2">
           @for (booking of userBookings; track booking.id) {
             <div class="col-12 col-lg-6">
               <div class="booking-item border rounded-3 p-2">
                 <div class="fw-semibold small mb-1">
-                  {{ booking.rideData?.from_city || 'Unknown city' }}
+                  {{ booking.rideData?.from_city || ('home.unknown_city' | t) }}
                   <i class="fas fa-arrow-right mx-1"></i>
-                  {{ booking.rideData?.to_city || 'Unknown city' }}
+                  {{ booking.rideData?.to_city || ('home.unknown_city' | t) }}
                 </div>
                 <div class="text-muted small mb-2">
                   {{ booking.rideData?.departure_date | date:'dd MMM yyyy' }}
@@ -111,7 +111,7 @@
                   </span>
                   @if(booking.rideData?.id){
                     <a [routerLink]="['/details-trip', booking.rideData.id]" class="btn btn-sm btn-outline-secondary rounded-pill">
-                      View trip
+                      {{ 'home.view_trip' | t }}
                     </a>
                   }
                 </div>
@@ -126,15 +126,15 @@
   @if(loading){
     <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
       <div class="spinner-border principal" role="status">
-        <span class="visually-hidden">Loading...</span>
+        <span class="visually-hidden">{{ 'home.loading' | t }}</span>
       </div>
     </div>
   }@else{
     @if(rides.length === 0){
       <div class="text-center text-muted my-5">
         <i class="fa fa-car fa-3x mb-3"></i>
-        <h5>No rides available</h5>
-        <p>Try adjusting your search criteria or check back later.</p>
+        <h5>{{ 'home.no_rides' | t }}</h5>
+        <p>{{ 'home.try_adjust' | t }}</p>
       </div>
     }
 
@@ -157,16 +157,16 @@
           @if(ride.status === 'PROPOSED') {
             <div class="proposal-box rounded-3 p-2 mb-3">
               <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="badge text-bg-warning">Ride proposal</span>
-                <span class="small text-muted">{{ joinedUsersCount(ride.id) + 1 }} joined</span>
+                <span class="badge text-bg-warning">{{ 'home.ride_proposal' | t }}</span>
+                <span class="small text-muted">{{ joinedUsersCount(ride.id) + 1 }} {{ 'home.joined_count' | t }}</span>
               </div>
-              <div class="small fw-semibold mb-1">This is not an existing ride yet.</div>
+              <div class="small fw-semibold mb-1">{{ 'home.no_existing_ride' | t }}</div>
               <div class="small text-muted">
-                No driver has accepted this trip. Joining this proposal significantly increases the chance of finding one.
+                {{ 'home.no_driver' | t }}
               </div>
               <div class="d-flex align-items-center mt-2 p-2 border rounded shadow-sm bg-light">
                 <i class="fa-solid fa-tag me-2 text-primary"></i>
-                <div class="small text-muted me-1">Proposed price:</div>
+                <div class="small text-muted me-1">{{ 'home.proposed_price' | t }}</div>
                 <div class="fw-bold text-dark">
                   {{ prixFinal(ride.price) | number:'1.0-0' }} BIF
                 </div>
@@ -178,9 +178,9 @@
                 [disabled]="hasJoinedProposal(ride.id)"
               >
                 @if(hasJoinedProposal(ride.id)) {
-                  Joined
+                  {{ 'home.joined' | t }}
                 } @else {
-                  Join proposal
+                  {{ 'home.join_proposal' | t }}
                 }
               </button>
             </div>
@@ -199,11 +199,11 @@
               </span>
               @if(!isMyRide(ride)){
                 <button class="btn button principal btn-sm rounded-pill">
-                  Book
+                  {{ 'home.book' | t }}
                 </button>
               } @else {
                 <span class="badge bg-success rounded-pill">
-                  Your ride
+                  {{ 'home.your_ride' | t }}
                 </span>
               }
             </div>

@@ -2,17 +2,24 @@
   <div class="col-11 col-sm-9 col-md-6 col-lg-4 m-2">
 
     <div class="card border-0 shadow-lg rounded-4 p-4 blackOrWhite">
-
-      <!-- Logo -->
-      <div class="text-center mb-4">
-        <img src="/logo_tugo.svg" alt="Tugo logo" class="mb-3" style="width: 9rem;">
-        <h4 class="fw-bold mb-1">Welcome back 👋</h4>
-        <p class="text-muted small">Sign in to continue</p>
+      <div class="d-flex justify-content-end mb-2">
+        <select
+          class="form-select form-select-sm w-auto"
+          [value]="languageService.currentLanguage"
+          (change)="onLanguageChange($event)"
+        >
+          <option value="en">{{ 'language.english' | t }}</option>
+          <option value="fr">{{ 'language.french' | t }}</option>
+        </select>
       </div>
 
-      <!-- Form -->
+      <div class="text-center mb-4">
+        <img src="/logo_tugo.svg" alt="Tugo logo" class="mb-3" style="width: 9rem;">
+        <h4 class="fw-bold mb-1">{{ 'login.welcome' | t }} ??</h4>
+        <p class="text-muted small">{{ 'login.subtitle' | t }}</p>
+      </div>
+
       <form [formGroup]="loginForm" (ngSubmit)="submit()">
-        <!-- Username -->
         <div class="mb-3">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-transparent border-end-0">
@@ -21,14 +28,13 @@
             <input
               type="text"
               class="form-control border-start-0"
-              placeholder="Username"
+              [placeholder]="'login.username' | t"
               formControlName="username"
               required
             >
           </div>
         </div>
 
-        <!-- Password -->
         <div class="mb-3">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-transparent border-end-0">
@@ -37,37 +43,35 @@
             <input
               type="password"
               class="form-control border-start-0"
-              placeholder="Password"
+              [placeholder]="'login.password' | t"
               formControlName="password"
               required
             >
           </div>
         </div>
+
         @if (errorMessage) {
           <div class="alert alert-danger py-2 text-center small">
             {{ errorMessage }}
           </div>
         }
 
-        <!-- Login button -->
         <div class="d-grid mt-4">
           <button
             type="submit"
             class="btn button principal btn-sm rounded-pill py-2 fw-semibold"
             [disabled]="loading"
           >
-            {{ loading ? 'Connexion...' : 'Login' }}
+            {{ loading ? ('login.loading' | t) : ('login.submit' | t) }}
           </button>
         </div>
       </form>
 
-      <!-- Sign up -->
       <div class="text-center mt-4">
-        <span class="small text-muted">Don’t have an account?</span><br>
-        <a href="/sign-up" class="fw-semibold text-decoration-none">Sign up</a>
+        <span class="small text-muted">{{ 'login.no_account' | t }}</span><br>
+        <a href="/sign-up" class="fw-semibold text-decoration-none">{{ 'login.signup' | t }}</a>
       </div>
 
     </div>
   </div>
 </div>
-

@@ -2,18 +2,24 @@
   <div class="col-11 col-sm-9 col-md-7 col-lg-10 m-2">
 
     <div class="card border-0 shadow-lg rounded-4 p-4 blackOrWhite">
-
-      <!-- Logo & title -->
-      <div class="text-center mb-4">
-        <img src="/logo_tugo.svg" alt="Tugo logo" class="mb-3" style="width: 8rem;">
-        <h4 class="fw-bold mb-1">Create your account 🚗</h4>
-        <p class="text-muted small">Join Tugo and start sharing rides</p>
+      <div class="d-flex justify-content-end mb-2">
+        <select
+          class="form-select form-select-sm w-auto"
+          [value]="languageService.currentLanguage"
+          (change)="onLanguageChange($event)"
+        >
+          <option value="en">{{ 'language.english' | t }}</option>
+          <option value="fr">{{ 'language.french' | t }}</option>
+        </select>
       </div>
 
-      <!-- Form -->
-      <form [formGroup]="registerForm" (ngSubmit)="submit()">
+      <div class="text-center mb-4">
+        <img src="/logo_tugo.svg" alt="Tugo logo" class="mb-3" style="width: 8rem;">
+        <h4 class="fw-bold mb-1">{{ 'signup.title' | t }} ??</h4>
+        <p class="text-muted small">{{ 'signup.subtitle' | t }}</p>
+      </div>
 
-        <!-- Full name -->
+      <form [formGroup]="registerForm" (ngSubmit)="submit()">
         <div class="mb-3">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-transparent border-end-0">
@@ -22,14 +28,13 @@
             <input
               type="text"
               class="form-control border-start-0"
-              placeholder="Full name"
+              [placeholder]="'signup.full_name' | t"
               formControlName="firstname"
               required
             >
           </div>
         </div>
 
-        <!-- Phone -->
         <div class="mb-3">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-transparent border-end-0">
@@ -38,14 +43,13 @@
             <input
               type="tel"
               class="form-control border-start-0"
-              placeholder="Phone number"
+              [placeholder]="'signup.phone' | t"
               formControlName="contact_number"
               required
             >
           </div>
         </div>
 
-        <!-- contact -->
         <div class="mb-3">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-transparent border-end-0">
@@ -54,14 +58,13 @@
             <input
               type="text"
               class="form-control border-start-0"
-              placeholder="Username"
+              [placeholder]="'signup.username' | t"
               formControlName="username"
               required
             >
           </div>
         </div>
 
-        <!-- Password -->
         <div class="mb-3">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-transparent border-end-0">
@@ -70,14 +73,13 @@
             <input
               type="password"
               class="form-control border-start-0"
-              placeholder="Password"
+              [placeholder]="'signup.password' | t"
               formControlName="password"
               required
             >
           </div>
         </div>
 
-        <!-- Confirm password -->
         <div class="mb-4">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-transparent border-end-0">
@@ -86,43 +88,40 @@
             <input
               type="password"
               class="form-control border-start-0"
-              placeholder="Confirm password"
+              [placeholder]="'signup.confirm_password' | t"
               formControlName="confirmPassword"
               required
             >
           </div>
         </div>
+
         @if(errorMessage){
           <div class="alert alert-danger text-center py-2 mt-3">
-            {{errorMessage}}
+            {{ errorMessage }}
           </div>
         }
 
-
-        <!-- Submit -->
         <div class="d-grid gap-2">
           <button
             type="submit"
             class="btn button principal btn-sm rounded-pill py-2 fw-semibold col-6 mx-auto"
             [disabled]="loading || registerForm.invalid"
             >
-            {{ loading ? 'Creating account...' : 'Create account' }}
+            {{ loading ? ('signup.loading' | t) : ('signup.submit' | t) }}
           </button>
           <button
             type="button"
             class="btn btn-outline-secondary btn-sm rounded-pill py-2 fw-semibold col-6 mx-auto"
             (click)="cancel()"
             >
-            Cancel
+            {{ 'signup.cancel' | t }}
           </button>
         </div>
-
       </form>
 
-      <!-- Login link -->
       <div class="text-center mt-4">
-        <span class="small text-muted">Already have an account?</span><br>
-        <a href="/login" class="fw-semibold text-decoration-none">Login</a>
+        <span class="small text-muted">{{ 'signup.have_account' | t }}</span><br>
+        <a href="/login" class="fw-semibold text-decoration-none">{{ 'signup.login' | t }}</a>
       </div>
 
     </div>

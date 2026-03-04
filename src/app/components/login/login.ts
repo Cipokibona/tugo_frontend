@@ -3,10 +3,12 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ServiceApi } from '../../services/service-api';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '../../pipes/translate.pipe';
+import { AppLanguage, LanguageService } from '../../services/language.service';
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
@@ -19,7 +21,8 @@ export class Login {
   constructor(
     private fb: FormBuilder,
     private service: ServiceApi,
-    private router: Router
+    private router: Router,
+    public languageService: LanguageService
   ) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
@@ -53,5 +56,13 @@ export class Login {
       }
     });
 
+  }
+
+  onLanguageChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    const language = target.value as AppLanguage;
+    if (language === 'fr' || language === 'en') {
+      this.languageService.setLanguage(language);
+    }
   }
 }

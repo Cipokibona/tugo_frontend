@@ -4,10 +4,12 @@ import { ServiceApi } from '../../services/service-api';
 import { error } from 'console';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '../../pipes/translate.pipe';
+import { AppLanguage, LanguageService } from '../../services/language.service';
 
 @Component({
   selector: 'app-sign-up',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
   templateUrl: './sign-up.html',
   styleUrl: './sign-up.scss',
 })
@@ -16,7 +18,12 @@ export class SignUp implements OnInit{
   loading = false;
   errorMessage: string | null = null;
 
-  constructor(private fb: FormBuilder, private service: ServiceApi , private router: Router) {
+  constructor(
+    private fb: FormBuilder,
+    private service: ServiceApi,
+    private router: Router,
+    public languageService: LanguageService
+  ) {
     this.registerForm = this.fb.group(
       {
         firstname: ['', [Validators.required, Validators.minLength(3)]],
@@ -103,6 +110,14 @@ export class SignUp implements OnInit{
 
   cancel(): void {
     this.registerForm.reset();
+  }
+
+  onLanguageChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    const language = target.value as AppLanguage;
+    if (language === 'fr' || language === 'en') {
+      this.languageService.setLanguage(language);
+    }
   }
 
   /** Helpers */
