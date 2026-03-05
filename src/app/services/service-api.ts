@@ -92,11 +92,41 @@ export class ServiceApi {
   // }
 
   getToken(): string | null {
-    return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (this.token && this.token !== 'null' && this.token !== 'undefined') {
+      return this.token;
+    }
+
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token || token === 'null' || token === 'undefined') {
+        return null;
+      }
+
+      this.token = token;
+      return token;
+    } catch {
+      return null;
+    }
   }
 
   getRefreshToken(): string | null {
-    return typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (!refreshToken || refreshToken === 'null' || refreshToken === 'undefined') {
+        return null;
+      }
+      return refreshToken;
+    } catch {
+      return null;
+    }
   }
 
   isAccessTokenExpired(token: string): boolean {

@@ -394,6 +394,7 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
 
   submit() {
     if (this.rideForm.invalid) return;
+    this.errorMessage = null;
 
     const departureDate = this.rideForm.value.departure_date;
     const departureTime = this.rideForm.value.departure_time;
@@ -406,15 +407,12 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    if (!this.rideForm.value.route_coords || this.rideForm.value.route_coords.length === 0) {
-      this.errorMessage = 'Please choose one route from the map before publishing.';
-      return;
-    }
-
     this.loading = true;
 
     const basePayload = {
       ...this.rideForm.value,
+      route_coords: this.rideForm.value.route_coords || null,
+      distance_km: this.rideForm.value.distance_km || null,
       status: this.userRole === 'CLIENT' ? 'PROPOSED' : 'OPEN',
     };
     const isProposed = basePayload.status === 'PROPOSED';
