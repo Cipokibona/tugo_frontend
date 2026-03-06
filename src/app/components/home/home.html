@@ -90,9 +90,11 @@
             <div class="col-12 col-lg-6">
               <div class="booking-item border rounded-3 p-2">
                 <div class="fw-semibold small mb-1">
-                  {{ booking.rideData?.from_city || ('home.unknown_city' | t) }}
-                  <i class="fas fa-arrow-right mx-1"></i>
-                  {{ booking.rideData?.to_city || ('home.unknown_city' | t) }}
+                  @if(shouldShowCityDisplay(booking.rideData)) {
+                    {{ routeCityDisplay(booking.rideData) }}
+                  } @else {
+                    {{ 'home.unknown_city' | t }}
+                  }
                 </div>
                 <div class="text-muted small mb-2">
                   {{ booking.rideData?.departure_date | date:'dd MMM yyyy' }}
@@ -144,9 +146,11 @@
         <a [routerLink]="['/details-trip', ride.share_code || ride.id]" class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite h-100 link-underline link-underline-opacity-0">
 
           <div class="mb-2">
-            <span class="fw-semibold">{{ ride.from_city }}</span>
-            <i class="fa-solid fa-arrow-right mx-2"></i>
-            <span class="fw-semibold">{{ ride.to_city }}</span>
+            @if(shouldShowCityDisplay(ride)) {
+              <span class="fw-semibold">{{ routeCityDisplay(ride) }}</span>
+            } @else {
+              <span class="fw-semibold">{{ 'home.unknown_city' | t }}</span>
+            }
           </div>
 
           <div class="d-flex justify-content-between small text-muted mb-2">

@@ -248,4 +248,18 @@ export class Home implements OnInit {
 
     return prix + commission + tvaSurCommission;
   }
+
+  shouldShowCityDisplay(ride: any): boolean {
+    return !!ride?.from_city && Array.isArray(ride?.route_coords) && ride.route_coords.length > 0;
+  }
+
+  routeCityDisplay(ride: any): string {
+    if (!this.shouldShowCityDisplay(ride)) return '';
+    const fromCity = String(ride?.from_city || '').trim();
+    const toCity = String(ride?.to_city || '').trim();
+    if (!toCity || fromCity.toLowerCase() === toCity.toLowerCase()) {
+      return fromCity;
+    }
+    return `${fromCity} -> ${toCity}`;
+  }
 }

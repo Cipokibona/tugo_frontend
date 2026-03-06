@@ -260,13 +260,7 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
     this.http.get<any>(reverseUrl).subscribe({
       next: (resp) => {
         const address = resp?.address || {};
-        const cityName =
-          address.city ||
-          address.town ||
-          address.village ||
-          address.county ||
-          resp?.display_name ||
-          `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`;
+        const cityName = this.buildCityNeighborhoodLabel(address, resp?.display_name, point);
 
         this.rideForm.patchValue({ [controlName]: cityName });
         if (loadAfterPatch && this.startPoint && this.endPoint) {
@@ -280,6 +274,39 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
         }
       },
     });
+  }
+
+  private buildCityNeighborhoodLabel(
+    address: any,
+    fallbackDisplayName: string | undefined,
+    point: { lat: number; lon: number }
+  ): string {
+    const city =
+      address?.city ||
+      address?.town ||
+      address?.village ||
+      address?.municipality ||
+      address?.county ||
+      '';
+
+    const neighborhood =
+      address?.suburb ||
+      address?.neighbourhood ||
+      address?.neighborhood ||
+      address?.quarter ||
+      address?.hamlet ||
+      '';
+
+    if (city && neighborhood) {
+      return `${city}, ${neighborhood}`;
+    }
+    if (city) {
+      return city;
+    }
+    if (neighborhood) {
+      return neighborhood;
+    }
+    return fallbackDisplayName || `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`;
   }
 
   loadRoute(preferredRouteIndex = 0, requireUnsavedRoute = false) {

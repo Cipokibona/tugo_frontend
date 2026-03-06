@@ -226,6 +226,20 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
     return this.ride?.proposer === this.user?.id;
   }
 
+  shouldShowCityDisplay(ride: any): boolean {
+    return !!ride?.from_city && Array.isArray(ride?.route_coords) && ride.route_coords.length > 0;
+  }
+
+  routeCityDisplay(ride: any): string {
+    if (!this.shouldShowCityDisplay(ride)) return '';
+    const fromCity = String(ride?.from_city || '').trim();
+    const toCity = String(ride?.to_city || '').trim();
+    if (!toCity || fromCity.toLowerCase() === toCity.toLowerCase()) {
+      return fromCity;
+    }
+    return `${fromCity} -> ${toCity}`;
+  }
+
   // get joinedUsersCount(): number {
   //   const joined = this.bookings.filter(
   //     booking => booking.status !== 'CANCELLED' && booking.status !== 'CLOSED'

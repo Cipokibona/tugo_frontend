@@ -112,7 +112,17 @@ export class Notifications implements OnInit {
     const ride = this.ridesById.get(rideId);
     if (!ride) return `Ride #${rideId}`;
 
-    return `${ride.from_city} -> ${ride.to_city}`;
+    if (!Array.isArray(ride?.route_coords) || ride.route_coords.length === 0 || !ride?.from_city) {
+      return 'Ride selected on map';
+    }
+
+    const fromCity = String(ride.from_city || '').trim();
+    const toCity = String(ride.to_city || '').trim();
+    if (!toCity || fromCity.toLowerCase() === toCity.toLowerCase()) {
+      return fromCity;
+    }
+
+    return `${fromCity} -> ${toCity}`;
   }
 
   notificationTitle(notification: any): string {

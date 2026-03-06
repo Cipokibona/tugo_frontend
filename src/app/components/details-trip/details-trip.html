@@ -23,9 +23,9 @@
 
   <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 blackOrWhite">
     <div class="mb-2 d-flex align-items-center gap-2">
-      <span class="fw-bold">{{ ride?.from_city }}</span>
-      <i class="fas fa-arrow-right"></i>
-      <span class="fw-bold">{{ ride?.to_city }}</span>
+      @if(shouldShowCityDisplay(ride)) {
+        <span class="fw-bold">{{ routeCityDisplay(ride) }}</span>
+      }
       @if(isProposedRide()) {
         <span class="badge text-bg-warning">PROPOSED</span>
       }
