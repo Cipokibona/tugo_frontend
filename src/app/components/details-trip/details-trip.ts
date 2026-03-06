@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, OnDestroy, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { ServiceApi } from '../../services/service-api';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule, Location, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom, forkJoin } from 'rxjs';
@@ -16,6 +16,7 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
   ride: any | null = null;
   user: any | null = null;
   currentRideId: number | null = null;
+  currentRideShareCode: string | null = null;
 
   bookings: any[] = [];
 
@@ -25,6 +26,7 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
   cancellingRide = false;
   errorPage: any | null = null;
   errorMessage: string | null = null;
+  shareMessage: string | null = null;
 
   selectedSeats = 1;
   proposedJoinRole: 'CLIENT' | 'DRIVER' = 'CLIENT';
@@ -45,6 +47,7 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     private service: ServiceApi,
     private router: Router,
+    private route: ActivatedRoute,
     private location: Location,
   ) {}
 
@@ -53,12 +56,11 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit() {
-    const rideId = Number(this.router.url.split('/').pop());
-    this.currentRideId = Number.isNaN(rideId) ? null : rideId;
+    const shareCode = this.route.snapshot.paramMap.get('shareCode');
+    this.currentRideShareCode = shareCode ? decodeURIComponent(shareCode) : null;
 
     this.getUser();
     this.getRideDetails();
-    this.getBookings();
   }
 
   ngOnDestroy(): void {
@@ -132,12 +134,13 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getRideDetails() {
-    if (!this.currentRideId) return;
+    if (!this.currentRideShareCode) return;
 
     this.loading = true;
-    this.service.getRideDetails(this.currentRideId).subscribe({
+    this.service.getRideDetailsByShareCode(this.currentRideShareCode).subscribe({
       next: ride => {
         this.ride = ride;
+        this.currentRideId = ride?.id ?? null;
         if (!this.proposedDriverDepartureTime) {
           this.proposedDriverDepartureTime = ride?.departure_time || '';
         }
@@ -146,9 +149,34 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
         }
         this.loading = false;
         this.renderRideRoute();
+        this.getBookings();
         console.log('Details de la course', this.ride);
       },
       error: err => {
+        const fallbackId = Number(this.currentRideShareCode);
+        if (!Number.isNaN(fallbackId) && fallbackId > 0) {
+          this.currentRideId = fallbackId;
+          this.service.getRideDetails(fallbackId).subscribe({
+            next: (rideFallback) => {
+              this.ride = rideFallback;
+              this.currentRideShareCode = rideFallback?.share_code || String(fallbackId);
+              if (!this.proposedDriverDepartureTime) {
+                this.proposedDriverDepartureTime = rideFallback?.departure_time || '';
+              }
+              if (!this.proposedDriverPrice) {
+                this.proposedDriverPrice = Number(rideFallback?.price || 0);
+              }
+              this.loading = false;
+              this.renderRideRoute();
+              this.getBookings();
+            },
+            error: () => {
+              this.errorPage = 'Erreur lors de la recuperation des details de la course';
+              this.loading = false;
+            }
+          });
+          return;
+        }
         this.errorPage = 'Erreur lors de la recuperation des details de la course';
         this.loading = false;
         console.log('Erreur pour les details de la course', err);
@@ -244,7 +272,6 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
 
   refreshRideAndBookings() {
     this.getRideDetails();
-    this.getBookings();
   }
 
   cancelMyBookings() {
@@ -409,7 +436,7 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
       if (recipientIds.length === 0) return;
 
       const title = `New ride available: ${newRide.from_city} -> ${newRide.to_city}`;
-      const tripLink = `/details-trip/${newRide.id}`;
+      const tripLink = `/details-trip/${newRide.share_code || newRide.id}`;
       const message = `A driver created a new ride from your proposal. Departure: ${newRide.departure_date} at ${newRide.departure_time}. Price: ${newRide.price} BIF. Open this trip: ${tripLink}`;
 
       const requests = recipientIds.map((recipientId: number) =>
@@ -471,6 +498,40 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
   goHome() {
     this.showInvoice = false;
     this.router.navigate(['/home']);
+  }
+
+  shareRideLink() {
+    if (!isPlatformBrowser(this.platformId) || !this.ride) return;
+
+    const shareCode = this.ride?.share_code || this.currentRideShareCode;
+    if (!shareCode) return;
+
+    const shareUrl = `${window.location.origin}/details-trip/${encodeURIComponent(shareCode)}`;
+    const title = `${this.ride.from_city} -> ${this.ride.to_city}`;
+    const text = `Trip details: ${title}`;
+
+    const nav: any = navigator;
+    if (nav?.share) {
+      nav.share({ title, text, url: shareUrl })
+        .then(() => {
+          this.shareMessage = 'Link shared.';
+        })
+        .catch(() => {
+          // User cancellation is expected here.
+        });
+      return;
+    }
+
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        this.shareMessage = 'Link copied to clipboard.';
+      }).catch(() => {
+        this.shareMessage = `Copy this link: ${shareUrl}`;
+      });
+      return;
+    }
+
+    this.shareMessage = `Copy this link: ${shareUrl}`;
   }
 
   downloadInvoice() {

@@ -45,10 +45,10 @@
 
                 @if(isRideItemExpanded(feedItem.payload, 'notification')) {
                   <div class="small text-muted">{{ notificationMessage(feedItem.payload) }}</div>
-                  @if(notificationRideId(feedItem.payload)) {
+                  @if(notificationRideCode(feedItem.payload)) {
                     <div class="mt-2">
                       <a
-                        [routerLink]="['/details-trip', notificationRideId(feedItem.payload)]"
+                        [routerLink]="['/details-trip', notificationRideCode(feedItem.payload)]"
                         class="btn btn-sm btn-outline-primary rounded-pill"
                       >
                         Open trip

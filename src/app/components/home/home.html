@@ -109,8 +109,8 @@
                     }">
                     {{ booking.status }}
                   </span>
-                  @if(booking.rideData?.id){
-                    <a [routerLink]="['/details-trip', booking.rideData.id]" class="btn btn-sm btn-outline-secondary rounded-pill">
+                  @if(booking.rideData?.share_code || booking.rideData?.id){
+                    <a [routerLink]="['/details-trip', booking.rideData.share_code || booking.rideData.id]" class="btn btn-sm btn-outline-secondary rounded-pill">
                       {{ 'home.view_trip' | t }}
                     </a>
                   }
@@ -141,7 +141,7 @@
     <div class="row g-3">
       @for(ride of rides; track ride.id) {
       <div class="col-md-6 col-lg-4">
-        <a [routerLink]="['/details-trip', ride.id]" class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite h-100 link-underline link-underline-opacity-0">
+        <a [routerLink]="['/details-trip', ride.share_code || ride.id]" class="card border-0 shadow-sm rounded-4 p-3 blackOrWhite h-100 link-underline link-underline-opacity-0">
 
           <div class="mb-2">
             <span class="fw-semibold">{{ ride.from_city }}</span>

@@ -123,13 +123,18 @@ export class Notifications implements OnInit {
     return notification?.message || '';
   }
 
-  notificationRideId(notification: any): number | null {
+  notificationRideCode(notification: any): string | null {
     const message = this.notificationMessage(notification);
-    const match = message.match(/\/details-trip\/(\d+)/);
+    const match = message.match(/\/details-trip\/([A-Za-z0-9_-]+)/);
     if (!match || !match[1]) return null;
 
-    const rideId = Number(match[1]);
-    return Number.isNaN(rideId) ? null : rideId;
+    const parsed = match[1];
+    const rideId = Number(parsed);
+    if (!Number.isNaN(rideId)) {
+      const ride = this.ridesById.get(rideId);
+      if (ride?.share_code) return String(ride.share_code);
+    }
+    return parsed;
   }
 
   canRespondToTaxiRequest(notification: any): boolean {

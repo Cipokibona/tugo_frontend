@@ -36,8 +36,8 @@ export const routes: Routes = [
     component: HomeAdmin
   },
   {
-    path: 'details-trip/:id',
-  component: DetailsTrip
+    path: 'details-trip/:shareCode',
+    component: DetailsTrip
   },
   {
     path: 'chat/:id',
