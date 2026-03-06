@@ -31,6 +31,8 @@ export class ServiceApi {
   private conversationUrl = `${this.url}conversations/`;
   private messageUrl = `${this.url}messages/`;
   private notificationUrl = `${this.url}notifications/`;
+  private pushSubscriptionUrl = `${this.url}push-subscriptions/`;
+  private pushPublicKeyUrl = `${this.url}push-public-key/`;
 
    constructor(private router: Router) { }
 
@@ -258,6 +260,53 @@ export class ServiceApi {
               if (!newToken) return throwError(() => new Error('Token refresh failed'));
               const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
               return this.http.put<any>(`${this.userUrl}${userId}/`, data, { headers: newHeaders });
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  patchUser(userId: number, data: any): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      return throwError(() => new Error('No token found'));
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.patch<any>(`${this.userUrl}${userId}/`, data, { headers }).pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          return this.refreshToken().pipe(
+            switchMap(() => {
+              const newToken = this.getToken();
+              if (!newToken) return throwError(() => new Error('Token refresh failed'));
+              const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
+              return this.http.patch<any>(`${this.userUrl}${userId}/`, data, { headers: newHeaders });
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      return throwError(() => new Error('No token found'));
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    const payload = { current_password: currentPassword, new_password: newPassword };
+    return this.http.post<any>(`${this.userUrl}change_password/`, payload, { headers }).pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          return this.refreshToken().pipe(
+            switchMap(() => {
+              const newToken = this.getToken();
+              if (!newToken) return throwError(() => new Error('Token refresh failed'));
+              const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
+              return this.http.post<any>(`${this.userUrl}change_password/`, payload, { headers: newHeaders });
             })
           );
         }
@@ -1039,6 +1088,64 @@ export class ServiceApi {
               if (!newToken) return throwError(() => new Error('Token refresh failed'));
               const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
               return this.http.post<any>(`${this.notificationUrl}${notificationId}/mark_read/`, {}, { headers: newHeaders });
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getPushPublicKey(): Observable<{ public_key: string }> {
+    return this.http.get<{ public_key: string }>(this.pushPublicKeyUrl).pipe(
+      catchError(error => throwError(() => error))
+    );
+  }
+
+  subscribePushSubscription(subscription: any): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      return throwError(() => new Error('No token found'));
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.post<any>(this.pushSubscriptionUrl, subscription, { headers }).pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          return this.refreshToken().pipe(
+            switchMap(() => {
+              const newToken = this.getToken();
+              if (!newToken) return throwError(() => new Error('Token refresh failed'));
+              const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
+              return this.http.post<any>(this.pushSubscriptionUrl, subscription, { headers: newHeaders });
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  unsubscribePushSubscription(endpoint: string): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      return throwError(() => new Error('No token found'));
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.request<any>('delete', this.pushSubscriptionUrl, {
+      headers,
+      body: { endpoint },
+    }).pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          return this.refreshToken().pipe(
+            switchMap(() => {
+              const newToken = this.getToken();
+              if (!newToken) return throwError(() => new Error('Token refresh failed'));
+              const newHeaders = new HttpHeaders({ Authorization: `Bearer ${newToken}` });
+              return this.http.request<any>('delete', this.pushSubscriptionUrl, {
+                headers: newHeaders,
+                body: { endpoint },
+              });
             })
           );
         }

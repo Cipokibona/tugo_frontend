@@ -35,6 +35,7 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
   startMarker: any | null = null;
   endMarker: any | null = null;
   mapSelectMode: 'START' | 'END' | null = null;
+  locationSuggestionTried = false;
 
   loading = false;
   routeLoading = false;
@@ -49,6 +50,8 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
     durationMin: number;
   }> = [];
   selectedRouteIndex = 0;
+  savedRouteSignatures = new Set<string>();
+  currentRouteRequestKey = '';
 
   constructor(
     private location: Location,
@@ -89,6 +92,8 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
 
     this.map.on('click', (e: any) => this.handleMapClick(e));
     setTimeout(() => this.map.invalidateSize(), 200);
+
+    this.suggestCurrentLocationAsStart();
   }
 
   goBack(): void {
@@ -161,12 +166,18 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
     this.mapSelectMode = mode;
   }
 
+  useCurrentLocationAsStart() {
+    this.suggestCurrentLocationAsStart(true);
+  }
+
   clearMapSelection() {
     this.startPoint = null;
     this.endPoint = null;
     this.routeOptions = [];
     this.routePolylines = [];
     this.selectedRouteIndex = 0;
+    this.savedRouteSignatures.clear();
+    this.currentRouteRequestKey = '';
 
     this.rideForm.patchValue({
       from_city: '',
@@ -271,11 +282,11 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  loadRoute() {
+  loadRoute(preferredRouteIndex = 0, requireUnsavedRoute = false) {
     if (!this.L || !this.map) return;
 
     if (this.startPoint && this.endPoint) {
-      this.loadRouteFromPoints(this.startPoint, this.endPoint);
+      this.loadRouteFromPoints(this.startPoint, this.endPoint, preferredRouteIndex, requireUnsavedRoute);
       return;
     }
 
@@ -308,7 +319,7 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
         this.updateMarker('START', start);
         this.updateMarker('END', end);
 
-        this.loadRouteFromPoints(start, end);
+        this.loadRouteFromPoints(start, end, preferredRouteIndex, requireUnsavedRoute);
       },
       error: () => {
         this.errorMessage = 'Unable to geocode selected cities.';
@@ -317,7 +328,45 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  loadRouteFromPoints(start: { lat: number; lon: number }, end: { lat: number; lon: number }) {
+  calculateAnotherRoute() {
+    if (this.routeLoading) return;
+    this.errorMessage = null;
+
+    const currentRoute = this.routeOptions[this.selectedRouteIndex];
+    if (currentRoute) {
+      this.savedRouteSignatures.add(this.getRouteSignature(currentRoute.coords));
+    }
+
+    if (this.routeOptions.length > 1) {
+      const nextUnsavedIndex = this.findFirstUnsavedRouteIndex(this.routeOptions);
+      if (nextUnsavedIndex !== -1) {
+        this.selectRoute(nextUnsavedIndex);
+        return;
+      }
+    }
+
+    if (this.startPoint && this.endPoint) {
+      this.loadRouteFromPoints(this.startPoint, this.endPoint, 0, true);
+      return;
+    }
+
+    this.loadRoute(0, true);
+  }
+
+  loadRouteFromPoints(
+    start: { lat: number; lon: number },
+    end: { lat: number; lon: number },
+    preferredRouteIndex = 0,
+    requireUnsavedRoute = false
+  ) {
+    const requestKey =
+      `${start.lat.toFixed(5)},${start.lon.toFixed(5)}|` +
+      `${end.lat.toFixed(5)},${end.lon.toFixed(5)}`;
+    if (this.currentRouteRequestKey !== requestKey) {
+      this.savedRouteSignatures.clear();
+      this.currentRouteRequestKey = requestKey;
+    }
+
     this.routeLoading = true;
     this.errorMessage = null;
 
@@ -358,7 +407,21 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
           this.routePolylines.push(polyline);
         });
 
-        this.selectRoute(0);
+        let selectedIndex = Math.min(
+          Math.max(preferredRouteIndex, 0),
+          this.routeOptions.length - 1
+        );
+        if (requireUnsavedRoute) {
+          const nextUnsavedIndex = this.findFirstUnsavedRouteIndex(this.routeOptions);
+          if (nextUnsavedIndex === -1) {
+            this.errorMessage = 'No additional different route is available.';
+            this.routeLoading = false;
+            return;
+          }
+          selectedIndex = nextUnsavedIndex;
+        }
+
+        this.selectRoute(selectedIndex);
         this.routeLoading = false;
       },
       error: () => {
@@ -441,6 +504,68 @@ export class FormTrip implements OnInit, AfterViewInit, OnDestroy {
         this.errorMessage = 'Erreur lors de la creation du ride';
       },
     });
+  }
+
+  private suggestCurrentLocationAsStart(force = false) {
+    if (!isPlatformBrowser(this.platformId) || !navigator.geolocation || !this.map) {
+      return;
+    }
+
+    if (this.locationSuggestionTried && !force) {
+      return;
+    }
+
+    const hasStartValue = !!String(this.rideForm?.value?.from_city ?? '').trim();
+    if (!force && (this.startPoint || hasStartValue)) {
+      return;
+    }
+
+    this.locationSuggestionTried = true;
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const point = {
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        };
+
+        this.startPoint = point;
+        this.updateMarker('START', point);
+        this.reverseGeocodeAndPatch(point, 'from_city');
+
+        // Focus map on suggested departure location.
+        this.map.setView([point.lat, point.lon], 13);
+      },
+      () => {
+        // If permission is denied or unavailable, keep current behavior.
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  private getRouteSignature(coords: [number, number][]): string {
+    if (!coords.length) return '';
+    const first = coords[0];
+    const mid = coords[Math.floor(coords.length / 2)];
+    const last = coords[coords.length - 1];
+    return [
+      `${first[0].toFixed(5)},${first[1].toFixed(5)}`,
+      `${mid[0].toFixed(5)},${mid[1].toFixed(5)}`,
+      `${last[0].toFixed(5)},${last[1].toFixed(5)}`,
+      String(coords.length),
+    ].join('|');
+  }
+
+  private findFirstUnsavedRouteIndex(
+    routes: Array<{ coords: [number, number][] }>
+  ): number {
+    for (let i = 0; i < routes.length; i++) {
+      const signature = this.getRouteSignature(routes[i].coords);
+      if (!this.savedRouteSignatures.has(signature)) {
+        return i;
+      }
+    }
+    return -1;
   }
 }
 

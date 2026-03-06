@@ -20,76 +20,101 @@
           <span class="badge rounded-pill text-bg-danger">{{ unreadNotificationsCount }} unread</span>
         }
       </h6>
-      @if(notifications.length === 0 && notificationMessages.length === 0) {
+      @if(rideFeedItems.length === 0) {
         <div class="small text-muted">No notifications yet.</div>
       } @else {
         <div class="d-flex flex-column gap-2">
-          @for(notification of notifications; track notification.id) {
-            @if(notificationRideId(notification)) {
-              <a
-                [routerLink]="['/details-trip', notificationRideId(notification)]"
-                class="notification-item text-decoration-none"
-                (click)="markNotificationAsRead(notification)"
+          @for(feedItem of visibleRideFeedItems; track feedItem.type + '-' + feedItem.payload?.id) {
+            @if(feedItem.type === 'notification') {
+              <div
+                class="notification-item clickable"
+                (click)="toggleRideItem(feedItem.payload, 'notification', $event)"
               >
                 <div class="small fw-semibold d-flex align-items-center gap-2">
-                  <span>{{ notificationTitle(notification) }}</span>
-                  @if(!notification?.is_read) {
+                  <span>{{ notificationTitle(feedItem.payload) }}</span>
+                  @if(!feedItem.payload?.is_read) {
                     <span class="badge rounded-pill text-bg-danger">Unread</span>
                   }
+                  <span class="ms-auto small text-muted">
+                    @if(isRideItemExpanded(feedItem.payload, 'notification')) { Hide } @else { Show }
+                  </span>
                 </div>
-                <div class="small text-muted">{{ notificationMessage(notification) }}</div>
                 <div class="time small text-muted">
-                  {{ notification.sender_username || 'System' }} • {{ messageTime(notification) }}
+                  {{ feedItem.payload.sender_username || 'System' }} • {{ messageTime(feedItem.payload) }}
                 </div>
-              </a>
-            } @else {
-              <div class="notification-item">
-                <div class="small fw-semibold d-flex align-items-center gap-2">
-                  <span>{{ notificationTitle(notification) }}</span>
-                  @if(!notification?.is_read) {
-                    <span class="badge rounded-pill text-bg-danger">Unread</span>
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-secondary rounded-pill ms-2"
-                      (click)="markNotificationAsRead(notification, $event)"
-                    >
-                      Mark as read
-                    </button>
+
+                @if(isRideItemExpanded(feedItem.payload, 'notification')) {
+                  <div class="small text-muted">{{ notificationMessage(feedItem.payload) }}</div>
+                  @if(notificationRideId(feedItem.payload)) {
+                    <div class="mt-2">
+                      <a
+                        [routerLink]="['/details-trip', notificationRideId(feedItem.payload)]"
+                        class="btn btn-sm btn-outline-primary rounded-pill"
+                      >
+                        Open trip
+                      </a>
+                    </div>
                   }
-                </div>
-                <div class="small text-muted">{{ notificationMessage(notification) }}</div>
-                @if(canRespondToTaxiRequest(notification)) {
-                  <div class="d-flex gap-2 mt-2">
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-success rounded-pill"
-                      (click)="respondToTaxiRequest(notification, 'ACCEPT', $event)"
-                    >
-                      Accept
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-danger rounded-pill"
-                      (click)="respondToTaxiRequest(notification, 'REJECT', $event)"
-                    >
-                      Reject
-                    </button>
+                  @if(canRespondToTaxiRequest(feedItem.payload)) {
+                    <div class="d-flex gap-2 mt-2">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-success rounded-pill"
+                        (click)="respondToTaxiRequest(feedItem.payload, 'ACCEPT', $event)"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-danger rounded-pill"
+                        (click)="respondToTaxiRequest(feedItem.payload, 'REJECT', $event)"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  } @else if(!feedItem.payload?.is_read) {
+                    <div class="mt-2">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary rounded-pill"
+                        (click)="markNotificationAsRead(feedItem.payload, $event)"
+                      >
+                        Mark as read
+                      </button>
+                    </div>
+                  }
+                }
+              </div>
+            } @else {
+              <div
+                class="notification-item clickable"
+                (click)="toggleRideItem(feedItem.payload, 'message', $event)"
+              >
+                <div class="small fw-semibold">{{ messageRide(feedItem.payload) }}</div>
+                <div class="time small text-muted">{{ messageTime(feedItem.payload) }}</div>
+                @if(isRideItemExpanded(feedItem.payload, 'message')) {
+                  <div class="small text-muted">{{ feedItem.payload.content }}</div>
+                  <div class="mt-2">
+                    <a [routerLink]="['/chat', feedItem.payload?.conversationData?.ride || 0]" class="btn btn-sm btn-outline-primary rounded-pill">
+                      Open chat
+                    </a>
                   </div>
                 }
-                <div class="time small text-muted">
-                  {{ notification.sender_username || 'System' }} • {{ messageTime(notification) }}
-                </div>
               </div>
             }
           }
-          @for(message of notificationMessages; track message.id) {
-            <a [routerLink]="['/chat', message?.conversationData?.ride || 0]" class="notification-item text-decoration-none">
-              <div class="small fw-semibold">{{ messageRide(message) }}</div>
-              <div class="small text-muted">{{ message.content }}</div>
-              <div class="time small text-muted">{{ messageTime(message) }}</div>
-            </a>
-          }
         </div>
+        @if(hasHiddenRideFeedItems) {
+          <div class="mt-3 text-center">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary rounded-pill"
+              (click)="showMoreRideFeed()"
+            >
+              See more
+            </button>
+          </div>
+        }
       }
     </div>
 
@@ -100,11 +125,21 @@
       } @else {
         <div class="d-flex flex-column gap-2">
           @for(message of groupMessages; track message.id) {
-            <a [routerLink]="['/chat', message?.conversationData?.ride || 0]" class="notification-item text-decoration-none">
+            <div
+              class="notification-item clickable"
+              (click)="toggleGroupMessage(message, $event)"
+            >
               <div class="small fw-semibold">{{ messageRide(message) }}</div>
-              <div class="small text-muted">{{ message.sender_username || 'User' }}: {{ message.content }}</div>
               <div class="time small text-muted">{{ messageTime(message) }}</div>
-            </a>
+              @if(isGroupMessageExpanded(message)) {
+                <div class="small text-muted">{{ message.sender_username || 'User' }}: {{ message.content }}</div>
+                <div class="mt-2">
+                  <a [routerLink]="['/chat', message?.conversationData?.ride || 0]" class="btn btn-sm btn-outline-primary rounded-pill">
+                    Open chat
+                  </a>
+                </div>
+              }
+            </div>
           }
         </div>
       }

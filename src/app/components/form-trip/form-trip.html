@@ -94,6 +94,13 @@
             </button>
             <button
               type="button"
+              class="btn btn-outline-primary btn-sm rounded-pill"
+              (click)="useCurrentLocationAsStart()"
+            >
+              Use my location
+            </button>
+            <button
+              type="button"
               class="btn btn-outline-secondary btn-sm rounded-pill"
               (click)="clearMapSelection()"
             >
@@ -107,11 +114,19 @@
             >
               @if(routeLoading) { Loading routes... } @else { Refresh routes }
             </button>
+            <button
+              type="button"
+              class="btn btn-outline-info btn-sm rounded-pill"
+              (click)="calculateAnotherRoute()"
+              [disabled]="routeLoading"
+            >
+              Calculate another route
+            </button>
           </div>
         </div>
         <div id="trip-map" class="map-container rounded-3 border"></div>
         <div class="small text-muted mt-2">
-          Optional: click on the map to generate route options automatically.
+          Your current location is suggested as departure by default. You can change it anytime.
         </div>
 
         @if(routeOptions.length > 0) {

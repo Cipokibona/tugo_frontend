@@ -20,6 +20,11 @@ export class Notifications implements OnInit {
   notifications: any[] = [];
   notificationMessages: any[] = [];
   groupMessages: any[] = [];
+  rideFeedItems: Array<{ type: 'notification' | 'message'; payload: any }> = [];
+  showAllRideFeed = false;
+  readonly rideFeedLimit = 5;
+  expandedRideItems = new Set<string>();
+  expandedGroupMessages = new Set<number>();
 
   constructor(private service: ServiceApi) {}
 
@@ -73,6 +78,8 @@ export class Notifications implements OnInit {
         this.groupMessages = userMessages.filter((message: any) =>
           !(message.content || '').startsWith('NOTIFICATION:')
         );
+        this.buildRideFeedItems();
+        this.showAllRideFeed = false;
 
         this.loading = false;
       },
@@ -153,6 +160,7 @@ export class Notifications implements OnInit {
               const timeB = new Date(b.created_at || b.createdAt || 0).getTime();
               return timeB - timeA;
             });
+            this.buildRideFeedItems();
           },
           error: () => {
             // Keep local state if refresh fails.
@@ -169,6 +177,19 @@ export class Notifications implements OnInit {
     return this.notifications.filter((notification: any) => !notification?.is_read).length;
   }
 
+  get visibleRideFeedItems(): Array<{ type: 'notification' | 'message'; payload: any }> {
+    if (this.showAllRideFeed) return this.rideFeedItems;
+    return this.rideFeedItems.slice(0, this.rideFeedLimit);
+  }
+
+  get hasHiddenRideFeedItems(): boolean {
+    return this.rideFeedItems.length > this.rideFeedLimit && !this.showAllRideFeed;
+  }
+
+  showMoreRideFeed(): void {
+    this.showAllRideFeed = true;
+  }
+
   markNotificationAsRead(notification: any, event?: Event): void {
     if (!notification?.id || notification?.is_read) return;
 
@@ -177,6 +198,7 @@ export class Notifications implements OnInit {
         this.notifications = this.notifications.map((item: any) =>
           item.id === notification.id ? { ...item, is_read: true } : item
         );
+        this.buildRideFeedItems();
       },
       error: () => {
         if (event) {
@@ -184,5 +206,67 @@ export class Notifications implements OnInit {
         }
       },
     });
+  }
+
+  rideItemKey(item: any, type: 'notification' | 'message'): string {
+    return type === 'notification' ? `n-${item?.id}` : `m-${item?.id}`;
+  }
+
+  isRideItemExpanded(item: any, type: 'notification' | 'message'): boolean {
+    return this.expandedRideItems.has(this.rideItemKey(item, type));
+  }
+
+  toggleRideItem(item: any, type: 'notification' | 'message', event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    const key = this.rideItemKey(item, type);
+    if (this.expandedRideItems.has(key)) {
+      this.expandedRideItems.delete(key);
+    } else {
+      this.expandedRideItems.add(key);
+      if (type === 'notification') {
+        this.markNotificationAsRead(item);
+      }
+    }
+  }
+
+  isGroupMessageExpanded(message: any): boolean {
+    return this.expandedGroupMessages.has(message?.id);
+  }
+
+  toggleGroupMessage(message: any, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    if (this.expandedGroupMessages.has(message?.id)) {
+      this.expandedGroupMessages.delete(message?.id);
+    } else {
+      this.expandedGroupMessages.add(message?.id);
+    }
+  }
+
+  private buildRideFeedItems(): void {
+    this.rideFeedItems = [
+      ...this.notifications.map((notification: any) => ({
+        type: 'notification' as const,
+        payload: notification,
+      })),
+      ...this.notificationMessages.map((message: any) => ({
+        type: 'message' as const,
+        payload: message,
+      })),
+    ].sort((a, b) => this.itemTimestamp(b.payload) - this.itemTimestamp(a.payload));
+  }
+
+  private itemTimestamp(item: any): number {
+    const rawDate = item?.created_at || item?.createdAt;
+    if (!rawDate) return 0;
+    const parsed = new Date(rawDate).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
   }
 }

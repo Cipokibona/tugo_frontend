@@ -1,0 +1,107 @@
+<div class="account-page container py-4">
+  <div class="row g-4 justify-content-center">
+    <div class="col-12 col-lg-8">
+      <div class="card shadow-sm border-0 rounded-4 p-4">
+        <h3 class="fw-bold mb-1">{{ 'account.title' | t }}</h3>
+        <p class="text-muted mb-4">{{ 'account.subtitle' | t }}</p>
+
+        @if(loadingProfile) {
+          <div class="text-muted">{{ 'home.loading' | t }}</div>
+        } @else {
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label">{{ 'account.full_name' | t }}</label>
+                <input type="text" class="form-control" formControlName="first_name">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">{{ 'account.username' | t }}</label>
+                <input type="text" class="form-control" formControlName="username">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">{{ 'account.email' | t }}</label>
+                <input type="email" class="form-control" formControlName="email">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">{{ 'account.phone' | t }}</label>
+                <input type="tel" class="form-control" formControlName="contact_number">
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label">{{ 'account.city' | t }}</label>
+                <input type="text" class="form-control" formControlName="city">
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label">{{ 'account.country' | t }}</label>
+                <input type="text" class="form-control" formControlName="country">
+              </div>
+              <div class="col-12 col-md-2">
+                <label class="form-label">{{ 'account.age' | t }}</label>
+                <input type="number" class="form-control" min="0" formControlName="age">
+              </div>
+              <div class="col-12 col-md-2">
+                <label class="form-label">{{ 'account.gender' | t }}</label>
+                <select class="form-select" formControlName="gender">
+                  <option value="">-</option>
+                  <option value="M">{{ 'account.gender_male' | t }}</option>
+                  <option value="F">{{ 'account.gender_female' | t }}</option>
+                </select>
+              </div>
+            </div>
+
+            @if(profileMessage) {
+              <div class="alert alert-success mt-3 mb-0">{{ profileMessage | t }}</div>
+            }
+            @if(profileError) {
+              <div class="alert alert-danger mt-3 mb-0">{{ profileError | t }}</div>
+            }
+
+            <div class="mt-4">
+              <button type="submit" class="btn btn-primary" [disabled]="savingProfile">
+                {{ 'account.save_profile' | t }}
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-8">
+      <div class="card shadow-sm border-0 rounded-4 p-4">
+        <h4 class="fw-bold mb-3">{{ 'account.password_title' | t }}</h4>
+
+        <form [formGroup]="passwordForm" (ngSubmit)="savePassword()">
+          <div class="row g-3">
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ 'account.current_password' | t }}</label>
+              <input type="password" class="form-control" formControlName="current_password">
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ 'account.new_password' | t }}</label>
+              <input type="password" class="form-control" formControlName="new_password">
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ 'account.confirm_password' | t }}</label>
+              <input type="password" class="form-control" formControlName="confirm_password">
+            </div>
+          </div>
+
+          @if(passwordForm.errors?.['passwordMismatch'] && passwordForm.touched) {
+            <div class="alert alert-warning mt-3 mb-0">{{ 'account.password_mismatch' | t }}</div>
+          }
+          @if(passwordMessage) {
+            <div class="alert alert-success mt-3 mb-0">{{ passwordMessage | t }}</div>
+          }
+          @if(passwordError) {
+            <div class="alert alert-danger mt-3 mb-0">{{ passwordError | t }}</div>
+          }
+
+          <div class="mt-4">
+            <button type="submit" class="btn btn-outline-primary" [disabled]="savingPassword">
+              {{ 'account.save_password' | t }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

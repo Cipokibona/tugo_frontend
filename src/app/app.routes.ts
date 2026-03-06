@@ -9,6 +9,7 @@ import { HomeAdmin } from './components/home-admin/home-admin';
 import { Notifications } from './components/notifications/notifications';
 import { AboutUs } from './components/about-us/about-us';
 import { Taxi } from './components/taxi/taxi';
+import { Account } from './components/account/account';
 
 export const routes: Routes = [
   {
@@ -57,5 +58,9 @@ export const routes: Routes = [
   {
     path: 'taxi',
     component: Taxi
+  },
+  {
+    path: 'account',
+    component: Account
   }
 ];
