@@ -75,7 +75,7 @@
           @if(isProposedRide()) {
             Proposal creator
           } @else {
-            Rating {{ ride?.drive_rating }}
+            ⭐ {{ ride?.drive_rating }}
           }
         </div>
       </div>
@@ -359,3 +359,16 @@
     </div>
   </div>
 }
+
+<form action= "https://www.afripay.africa/checkout/index.php" method="post" id="afripayform" name="afripayform">
+  <input type="hidden" name="amount" value="500" >
+  <input type="hidden" name="currency" value="BIF" >
+  <input type="hidden" name="comment" value="Commande 122">
+  <input type="hidden" name="client_token" value="" >
+  <input type="hidden" name="return_url" value= "http://your-domain-site" >
+  <input type="hidden" name="app_id" value=" e9408fe29cc3b2113d62a5c567336a5d ">
+  <input type="hidden" name="app_secret" value=" JDJ5JDEwJFRNZHhF ">
+  <p>
+    <input type="image" src= "https://www.afripay.africa/logos/pay_with_afripay.png" alt="Payer avec AfriPay" onclick="document.afripayform.submit();">
+  </p>
+</form>

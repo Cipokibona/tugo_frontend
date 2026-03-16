@@ -17,6 +17,7 @@ export class Chat implements OnInit {
 
   rideId: number | null = null;
   conversationId: number | null = null;
+  conversationMemberCount: number | null = null;
   messageText = '';
 
   loadingMessages = false;
@@ -94,6 +95,7 @@ export class Chat implements OnInit {
 
         if (conversation?.id) {
           this.conversationId = conversation.id;
+          this.conversationMemberCount = this.getConversationMemberCount(conversation);
           // this.messages = this.sortMessages(conversation.messages || []);
           this.loadingConversation = false;
           // this.cdr.detectChanges();
@@ -126,6 +128,23 @@ export class Chat implements OnInit {
     return conversation || null;
   }
 
+  getConversationMemberCount(conversation: any): number | null {
+    if (!conversation) return null;
+
+    const participants =
+      conversation.participants ||
+      conversation.members ||
+      conversation.users ||
+      conversation.participant_ids ||
+      conversation.member_ids;
+
+    if (Array.isArray(participants)) {
+      return participants.length;
+    }
+
+    return null;
+  }
+
   createConversationForRide() {
     if (this.rideId === null || !this.user) {
       this.loadingConversation = false;
@@ -144,6 +163,8 @@ export class Chat implements OnInit {
     this.service.createConversation(payload).subscribe({
       next: (conversation) => {
         this.conversationId = conversation?.id;
+        this.conversationMemberCount =
+          this.getConversationMemberCount(conversation) ?? participantIds.length;
         this.loadingConversation = false;
 
         if (!this.conversationId) {

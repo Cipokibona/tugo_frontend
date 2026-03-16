@@ -15,7 +15,7 @@
         @if(loadingConversation){
           Preparing conversation...
         } @else {
-          Conversation #{{ conversationId || '-' }}
+          Members: {{ conversationMemberCount || '-' }}
         }
       </div>
     </div>
