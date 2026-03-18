@@ -261,6 +261,7 @@
           <button
             class="btn button principal rounded-pill px-4"
             [disabled]="
+              processingAfripay ||
               (isProposedRide() && proposedJoinRole === 'CLIENT' && hasJoinedRide()) ||
               (isProposedRide() && proposedJoinRole === 'DRIVER' && (proposedDriverSeats <= 0 || !proposedDriverDepartureTime || proposedDriverPrice <= 0)) ||
               (!isProposedRide() && (seatsLeft <= 0 || !selectedSeats))
@@ -275,13 +276,17 @@
                   Join
                 }
               } @else {
-                Book now
+                Pay with Afripay
               }
             }
 
-            @if(loadingBooking) {
+            @if(loadingBooking || processingAfripay) {
               <i class="spinner-border spinner-border-sm me-2"></i>
-              Processing...
+              @if(isProposedRide()) {
+                Processing...
+              } @else {
+                Redirecting to payment...
+              }
             }
           </button>
         </div>
@@ -350,28 +355,9 @@
             Close
           </button>
 
-          <div class="d-flex gap-2">
-            <button
-              class="btn btn-outline-primary rounded-pill px-4"
-              [disabled]="processingAfripay"
-              (click)="downloadInvoice()"
-            >
-              <i class="fa fa-download me-2"></i> Download PDF
-            </button>
-
-            <button
-              class="btn button principal rounded-pill px-4"
-              [disabled]="processingAfripay"
-              (click)="payWithAfripay()"
-            >
-              @if(!processingAfripay) {
-                <i class="fa fa-credit-card me-2"></i> Pay with Afripay
-              } @else {
-                <i class="spinner-border spinner-border-sm me-2"></i>
-                Opening payment...
-              }
-            </button>
-          </div>
+          <button class="btn button principal rounded-pill px-4" (click)="downloadInvoice()">
+            <i class="fa fa-download me-2"></i> Download PDF
+          </button>
         </div>
 
       </div>

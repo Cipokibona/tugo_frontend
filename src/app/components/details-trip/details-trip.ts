@@ -13,6 +13,8 @@ import jsPDF from 'jspdf';
   styleUrl: './details-trip.scss',
 })
 export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
+  private static readonly AFRIPAY_PENDING_PAYMENT_KEY = 'tugo_afripay_pending_payment';
+
   ride: any | null = null;
   user: any | null = null;
   currentRideId: number | null = null;
@@ -37,6 +39,8 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
   showInvoice = false;
   invoiceData: any = null;
   processingAfripay = false;
+  paymentReturnToken: string | null = null;
+  finalizingPaidBooking = false;
 
   today: Date = new Date();
   platformId = inject(PLATFORM_ID);
@@ -59,6 +63,7 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit() {
     const shareCode = this.route.snapshot.paramMap.get('shareCode');
     this.currentRideShareCode = shareCode ? decodeURIComponent(shareCode) : null;
+    this.paymentReturnToken = this.route.snapshot.queryParamMap.get('payment_token');
 
     this.getUser();
     this.getRideDetails();
@@ -128,6 +133,7 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
     this.service.getUser().subscribe({
       next: user => {
         this.user = user;
+        this.tryFinalizePendingPayment();
         console.log('utilisateur connecte', this.user);
       },
       error: err => console.log("erreur pour l'utilisateur connecte", err)
@@ -151,6 +157,7 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
         this.loading = false;
         this.renderRideRoute();
         this.getBookings();
+        this.tryFinalizePendingPayment();
         console.log('Details de la course', this.ride);
       },
       error: err => {
@@ -170,6 +177,7 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
               this.loading = false;
               this.renderRideRoute();
               this.getBookings();
+              this.tryFinalizePendingPayment();
             },
             error: () => {
               this.errorPage = 'Erreur lors de la recuperation des details de la course';
@@ -352,45 +360,61 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    this.startRidePayment();
+  }
+
+  startRidePayment() {
+    if (!isPlatformBrowser(this.platformId) || !this.ride || !this.user || this.processingAfripay) return;
+
     const seatsToBook = this.selectedSeats;
     if (!seatsToBook || seatsToBook <= 0) return;
 
+    const paymentToken = `${this.user.id}-${this.ride.id}-${Date.now()}`;
+    const shareCode = this.ride?.share_code || this.currentRideShareCode || this.ride?.id;
+    const returnUrl = `${window.location.origin}/details-trip/${encodeURIComponent(String(shareCode))}?afripay_return=1&payment_token=${encodeURIComponent(paymentToken)}`;
+    const pendingPayment = {
+      token: paymentToken,
+      rideId: this.ride.id,
+      rideShareCode: String(shareCode),
+      seats: seatsToBook,
+      createdAt: Date.now(),
+      invoiceData: this.buildInvoiceData(this.ride, seatsToBook),
+    };
+
+    window.localStorage.setItem(
+      DetailsTrip.AFRIPAY_PENDING_PAYMENT_KEY,
+      JSON.stringify(pendingPayment),
+    );
+
+    this.processingAfripay = true;
     this.loadingBooking = true;
+    this.errorMessage = null;
 
-    const bookingsToCreate: any[] = [];
+    const payload = {
+      amount: String(Math.round(Number(pendingPayment.invoiceData.total || 0))),
+      currency: 'BIF',
+      comment: `Tugo ride ${this.ride?.id || ''} booking`,
+      client_token: paymentToken,
+      return_url: returnUrl,
+    };
 
-    for (let i = 0; i < seatsToBook; i++) {
-      bookingsToCreate.push({
-        ride: this.ride.id,
-        passenger: this.user?.id,
-        status: 'CONFIRMED',
-      });
-    }
+    this.service.startAfripayCheckout(payload).subscribe({
+      next: (response) => {
+        if (!response?.launch_url) {
+          this.clearPendingPayment();
+          this.errorMessage = 'Afripay launch URL was not returned by the server.';
+          this.processingAfripay = false;
+          this.loadingBooking = false;
+          return;
+        }
 
-    const bookingRequests = bookingsToCreate.map(b => this.service.createBooking(b));
-
-    forkJoin(bookingRequests).subscribe({
-      next: (results) => {
-        console.log('Bookings successful', results);
-
-        this.bookings.push(...(results as any[]));
-
-        this.invoiceData = {
-          ride: this.ride,
-          passenger: this.user?.first_name || this.user?.username,
-          seats: seatsToBook,
-          pricePerSeat: this.prixFinal(Number(this.ride.price)),
-          total: (this.prixFinal(Number(this.ride.price)) * seatsToBook)
-        };
-
-        this.showInvoice = true;
-        this.selectedSeats = 1;
-        this.loadingBooking = false;
-        this.refreshRideAndBookings();
+        window.location.href = response.launch_url;
       },
       error: (err) => {
-        console.error('Error creating bookings', err);
-        this.errorMessage = 'Erreur lors de la reservation, veuillez reessayer.';
+        console.error('Afripay checkout error', err);
+        this.clearPendingPayment();
+        this.errorMessage = err?.error?.detail || 'Unable to start Afripay checkout. Please try again.';
+        this.processingAfripay = false;
         this.loadingBooking = false;
       }
     });
@@ -515,47 +539,106 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/home']);
   }
 
-  payWithAfripay() {
-    if (!isPlatformBrowser(this.platformId) || !this.invoiceData || this.processingAfripay) return;
+  buildInvoiceData(ride: any, seats: number) {
+    return {
+      ride,
+      passenger: this.user?.first_name || this.user?.username,
+      seats,
+      pricePerSeat: this.prixFinal(Number(ride?.price)),
+      total: this.prixFinal(Number(ride?.price)) * seats,
+    };
+  }
 
-    const shareCode = this.ride?.share_code || this.currentRideShareCode || this.ride?.id;
-    const returnUrl = `${window.location.origin}/details-trip/${encodeURIComponent(String(shareCode))}`;
-    const checkoutWindow = window.open('', '_blank');
+  getPendingPayment(): any | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
 
-    if (!checkoutWindow) {
-      this.errorMessage = 'Unable to open the payment window. Please allow pop-ups and try again.';
+    try {
+      const raw = window.localStorage.getItem(DetailsTrip.AFRIPAY_PENDING_PAYMENT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  clearPendingPayment() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    window.localStorage.removeItem(DetailsTrip.AFRIPAY_PENDING_PAYMENT_KEY);
+  }
+
+  tryFinalizePendingPayment() {
+    if (
+      !isPlatformBrowser(this.platformId) ||
+      !this.paymentReturnToken ||
+      !this.ride ||
+      !this.user ||
+      this.finalizingPaidBooking
+    ) {
       return;
     }
 
-    this.processingAfripay = true;
+    const pendingPayment = this.getPendingPayment();
+    if (!pendingPayment || pendingPayment.token !== this.paymentReturnToken) {
+      this.errorMessage = 'Payment session not found or already processed.';
+      this.clearPaymentQueryParams();
+      return;
+    }
+
+    if (Number(pendingPayment.rideId) !== Number(this.ride.id)) {
+      this.errorMessage = 'This payment does not match the current ride.';
+      this.clearPaymentQueryParams();
+      return;
+    }
+
+    this.finalizePaidRideBooking(pendingPayment);
+  }
+
+  finalizePaidRideBooking(pendingPayment: any) {
+    const seatsToBook = Number(pendingPayment?.seats || 0);
+    if (!this.ride || !this.user || seatsToBook <= 0) {
+      this.errorMessage = 'Unable to complete booking after payment.';
+      return;
+    }
+
+    this.finalizingPaidBooking = true;
+    this.loadingBooking = true;
     this.errorMessage = null;
 
-    const payload = {
-      amount: String(Math.round(Number(this.invoiceData.total || 0))),
-      currency: 'BIF',
-      comment: `Tugo ride ${this.ride?.id || ''} booking`,
-      client_token: `${this.user?.id || 'guest'}-${Date.now()}`,
-      return_url: returnUrl,
-    };
+    const bookingsToCreate = Array.from({ length: seatsToBook }, () => ({
+      ride: this.ride!.id,
+      passenger: this.user!.id,
+      status: 'CONFIRMED',
+    }));
 
-    this.service.startAfripayCheckout(payload).subscribe({
-      next: (response) => {
-        if (!response?.launch_url) {
-          checkoutWindow.close();
-          this.errorMessage = 'Afripay launch URL was not returned by the server.';
-          this.processingAfripay = false;
-          return;
-        }
-
-        checkoutWindow.location.href = response.launch_url;
+    const bookingRequests = bookingsToCreate.map((booking) => this.service.createBooking(booking));
+    forkJoin(bookingRequests).subscribe({
+      next: (results) => {
+        this.bookings.push(...(results as any[]));
+        this.invoiceData = pendingPayment.invoiceData || this.buildInvoiceData(this.ride, seatsToBook);
+        this.showInvoice = true;
+        this.selectedSeats = 1;
         this.processingAfripay = false;
+        this.loadingBooking = false;
+        this.finalizingPaidBooking = false;
+        this.clearPendingPayment();
+        this.clearPaymentQueryParams();
+        this.refreshRideAndBookings();
       },
       error: (err) => {
-        checkoutWindow.close();
-        console.error('Afripay checkout error', err);
-        this.errorMessage = err?.error?.detail || 'Unable to start Afripay checkout. Please try again.';
+        console.error('Error creating bookings after payment', err);
+        this.errorMessage = err?.error?.non_field_errors?.[0] || 'Payment returned, but booking could not be completed.';
         this.processingAfripay = false;
+        this.loadingBooking = false;
+        this.finalizingPaidBooking = false;
       }
+    });
+  }
+
+  clearPaymentQueryParams() {
+    this.paymentReturnToken = null;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      replaceUrl: true,
+      queryParams: {},
     });
   }
 
