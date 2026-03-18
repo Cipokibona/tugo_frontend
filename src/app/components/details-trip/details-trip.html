@@ -350,25 +350,31 @@
             Close
           </button>
 
-          <button class="btn button principal rounded-pill px-4" (click)="downloadInvoice()">
-            <i class="fa fa-download me-2"></i> Download PDF
-          </button>
+          <div class="d-flex gap-2">
+            <button
+              class="btn btn-outline-primary rounded-pill px-4"
+              [disabled]="processingAfripay"
+              (click)="downloadInvoice()"
+            >
+              <i class="fa fa-download me-2"></i> Download PDF
+            </button>
+
+            <button
+              class="btn button principal rounded-pill px-4"
+              [disabled]="processingAfripay"
+              (click)="payWithAfripay()"
+            >
+              @if(!processingAfripay) {
+                <i class="fa fa-credit-card me-2"></i> Pay with Afripay
+              } @else {
+                <i class="spinner-border spinner-border-sm me-2"></i>
+                Opening payment...
+              }
+            </button>
+          </div>
         </div>
 
       </div>
     </div>
   </div>
 }
-
-<form action= "https://www.afripay.africa/checkout/index.php" method="post" id="afripayform" name="afripayform">
-  <input type="hidden" name="amount" value="500" >
-  <input type="hidden" name="currency" value="BIF" >
-  <input type="hidden" name="comment" value="Commande 122">
-  <input type="hidden" name="client_token" value="" >
-  <input type="hidden" name="return_url" value= "http://your-domain-site" >
-  <input type="hidden" name="app_id" value=" e9408fe29cc3b2113d62a5c567336a5d ">
-  <input type="hidden" name="app_secret" value=" JDJ5JDEwJFRNZHhF ">
-  <p>
-    <input type="image" src= "https://www.afripay.africa/logos/pay_with_afripay.png" alt="Payer avec AfriPay" onclick="document.afripayform.submit();">
-  </p>
-</form>

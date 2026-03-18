@@ -36,6 +36,7 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
 
   showInvoice = false;
   invoiceData: any = null;
+  processingAfripay = false;
 
   today: Date = new Date();
   platformId = inject(PLATFORM_ID);
@@ -512,6 +513,50 @@ export class DetailsTrip implements OnInit, AfterViewInit, OnDestroy {
   goHome() {
     this.showInvoice = false;
     this.router.navigate(['/home']);
+  }
+
+  payWithAfripay() {
+    if (!isPlatformBrowser(this.platformId) || !this.invoiceData || this.processingAfripay) return;
+
+    const shareCode = this.ride?.share_code || this.currentRideShareCode || this.ride?.id;
+    const returnUrl = `${window.location.origin}/details-trip/${encodeURIComponent(String(shareCode))}`;
+    const checkoutWindow = window.open('', '_blank');
+
+    if (!checkoutWindow) {
+      this.errorMessage = 'Unable to open the payment window. Please allow pop-ups and try again.';
+      return;
+    }
+
+    this.processingAfripay = true;
+    this.errorMessage = null;
+
+    const payload = {
+      amount: String(Math.round(Number(this.invoiceData.total || 0))),
+      currency: 'BIF',
+      comment: `Tugo ride ${this.ride?.id || ''} booking`,
+      client_token: `${this.user?.id || 'guest'}-${Date.now()}`,
+      return_url: returnUrl,
+    };
+
+    this.service.startAfripayCheckout(payload).subscribe({
+      next: (response) => {
+        if (!response?.launch_url) {
+          checkoutWindow.close();
+          this.errorMessage = 'Afripay launch URL was not returned by the server.';
+          this.processingAfripay = false;
+          return;
+        }
+
+        checkoutWindow.location.href = response.launch_url;
+        this.processingAfripay = false;
+      },
+      error: (err) => {
+        checkoutWindow.close();
+        console.error('Afripay checkout error', err);
+        this.errorMessage = err?.error?.detail || 'Unable to start Afripay checkout. Please try again.';
+        this.processingAfripay = false;
+      }
+    });
   }
 
   shareRideLink() {
