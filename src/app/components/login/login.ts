@@ -43,10 +43,16 @@ export class Login {
 
     this.service.login(username, password).subscribe({
       next: () => {
-        this.loading = false;
-        this.router.navigate(['/home']).then(() => {
-          window.location.reload();
-          console.log('Navigation to /home successful');
+        this.service.getUser().subscribe({
+          next: (user) => {
+            this.loading = false;
+            const targetRoute = user?.is_superuser ? '/home-admin' : '/home';
+            this.router.navigate([targetRoute]);
+          },
+          error: () => {
+            this.loading = false;
+            this.errorMessage = 'Unable to load your profile after login';
+          }
         });
       },
       error: (err) => {

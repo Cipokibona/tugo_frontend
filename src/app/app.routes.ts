@@ -10,6 +10,7 @@ import { Notifications } from './components/notifications/notifications';
 import { AboutUs } from './components/about-us/about-us';
 import { Taxi } from './components/taxi/taxi';
 import { Account } from './components/account/account';
+import { adminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   {
@@ -33,7 +34,8 @@ export const routes: Routes = [
   },
   {
     path: 'home-admin',
-    component: HomeAdmin
+    component: HomeAdmin,
+    canActivate: [adminGuard]
   },
   {
     path: 'details-trip/:shareCode',

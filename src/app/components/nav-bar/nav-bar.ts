@@ -11,6 +11,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
   styleUrl: './nav-bar.scss',
 })
 export class NavBar implements OnInit {
+  user: any | null = null;
   unreadNotificationsCount = 0;
 
   constructor(
@@ -19,7 +20,19 @@ export class NavBar implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadCurrentUser();
     this.loadUnreadNotificationsCount();
+  }
+
+  loadCurrentUser() {
+    this.service.getUser().subscribe({
+      next: (user) => {
+        this.user = user;
+      },
+      error: () => {
+        this.user = null;
+      },
+    });
   }
 
   loadUnreadNotificationsCount() {

@@ -87,6 +87,19 @@
         <span>{{ 'nav.my_account' | t }}</span>
       </a>
 
+      @if (user?.is_superuser) {
+        <a
+          class="menu-link"
+          [routerLink]="['/home-admin']"
+          routerLinkActive="active"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarToggleExternalContent"
+        >
+          <i class="fa fa-shield-halved"></i>
+          <span>{{ 'nav.admin' | t }}</span>
+        </a>
+      }
+
       <!--
       <a
         class="menu-link"

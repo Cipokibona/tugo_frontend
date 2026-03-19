@@ -1,161 +1,156 @@
 <div class="container-fluid p-4 bg-light min-vh-100">
-
-  <!-- Title -->
   <div class="mb-4">
-    <h4 class="fw-bold">Admin Dashboard</h4>
-    <p class="text-muted small">Overview of application activity</p>
+    <h4 class="fw-bold mb-1">Admin Dashboard</h4>
+    <p class="text-muted small mb-0">
+      @if (adminUser?.username) {
+        Superuser access for {{ adminUser.username }}
+      } @else {
+        Overview of logged-in users
+      }
+    </p>
   </div>
 
-  <!-- KPI Cards -->
-  <div class="row g-3 mb-4">
-    <!-- Visits -->
-    <div class="col-md-3">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="text-muted small">Total Visits</div>
-          <h3 class="fw-bold">12,450</h3>
-          <span class="text-success small">+8% this week</span>
+  @if (loading) {
+    <div class="card shadow-sm">
+      <div class="card-body py-5 text-center">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <div class="text-muted">Loading admin data...</div>
+      </div>
+    </div>
+  } @else if (errorMessage) {
+    <div class="alert alert-danger shadow-sm">{{ errorMessage }}</div>
+  } @else {
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Total Paid Bookings</div>
+            <h3 class="fw-bold mb-0">{{ totalPaidAmount | number:'1.0-0' }} BIF</h3>
+            <div class="small text-muted mt-2">{{ confirmedBookings.length }} confirmed booking(s)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Amount for Drivers</div>
+            <h3 class="fw-bold mb-0">{{ totalDriverAmount | number:'1.0-0' }} BIF</h3>
+            <div class="small text-muted mt-2">Base ride amount across confirmed bookings</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Your 10%</div>
+            <h3 class="fw-bold mb-0">{{ totalPlatformAmount | number:'1.0-0' }} BIF</h3>
+            <div class="small text-muted mt-2">VAT on your 10%: {{ totalPlatformVatAmount | number:'1.0-0' }} BIF</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Avg Session -->
-    <div class="col-md-3">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="text-muted small">Avg Session Duration</div>
-          <h3 class="fw-bold">4m 32s</h3>
+    <div class="row g-3 mb-4">
+      <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+          <div class="card-header fw-semibold">User Locations Map</div>
+          <div class="card-body position-relative">
+            @if (mapLoading) {
+              <div class="map-loading text-muted small">Loading map markers...</div>
+            }
+            <div id="admin-user-map" class="admin-map"></div>
+            @if (mapMessage) {
+              <div class="map-status text-muted small">{{ mapMessage }}</div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+          <div class="card-header fw-semibold">User Locations</div>
+          <div class="card-body">
+            @if (locationGroups.length === 0) {
+              <div class="text-muted small">No logged-in users found yet.</div>
+            } @else {
+              <div class="location-list">
+                @for (group of locationGroups; track group.label) {
+                  <div class="location-row">
+                    <span>{{ group.label }}</span>
+                    <span class="badge text-bg-dark rounded-pill">{{ group.count }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Satisfaction -->
-    <div class="col-md-3">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="text-muted small">User Satisfaction</div>
-          <h3 class="fw-bold">87%</h3>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Logged-in Users</div>
+            <h3 class="fw-bold mb-0">{{ totalLoggedInUsers }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Locations Reported</div>
+            <h3 class="fw-bold mb-0">{{ locationGroups.length }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Users Without Location</div>
+            <h3 class="fw-bold mb-0">{{ usersWithoutLocation }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="card shadow-sm h-100">
+          <div class="card-header fw-semibold">Logged-in Users</div>
+          <div class="card-body p-0">
+            @if (loggedInUsers.length === 0) {
+              <div class="p-3 text-muted small">No users have logged in yet.</div>
+            } @else {
+              <div class="table-responsive">
+                <table class="table mb-0 align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>User</th>
+                      <th>Location</th>
+                      <th>Last Login</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (user of loggedInUsers; track user.id) {
+                      <tr>
+                        <td>
+                          <div class="fw-semibold">{{ user.username }}</div>
+                          <div class="text-muted small">{{ detailLabel(user) }}</div>
+                        </td>
+                        <td>{{ locationLabel(user) }}</td>
+                        <td>{{ formatLastLogin(user.last_login) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
         </div>
       </div>
     </div>
-
-    <!-- Errors -->
-    <div class="col-md-3">
-      <div class="card shadow-sm border-danger">
-        <div class="card-body">
-          <div class="text-muted small">Errors Reported</div>
-          <h3 class="fw-bold text-danger">23</h3>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <div class="card shadow-sm mb-4">
-  <div class="card-header fw-semibold">Most Visited Pages</div>
-  <div class="card-body p-0">
-    <table class="table mb-0">
-      <thead class="table-light">
-        <tr>
-          <th>Page</th>
-          <th>Visits</th>
-          <th>Avg Time</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>/home</td>
-          <td>4,320</td>
-          <td>2m 10s</td>
-        </tr>
-        <tr>
-          <td>/rides</td>
-          <td>3,100</td>
-          <td>3m 45s</td>
-        </tr>
-        <tr>
-          <td>/chat</td>
-          <td>2,560</td>
-          <td>5m 02s</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-
-<div class="row g-3 mb-4">
-
-  <!-- Age -->
-  <div class="col-md-4">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">Age Groups</div>
-      <div class="card-body small">
-        18–25 : 35% <br>
-        26–35 : 42% <br>
-        36–50 : 18% <br>
-        50+ : 5%
-      </div>
-    </div>
-  </div>
-
-  <!-- Gender -->
-  <div class="col-md-4">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">Gender</div>
-      <div class="card-body small">
-        👨 Male : 62% <br>
-        👩 Female : 36% <br>
-        ⚧ Other : 2%
-      </div>
-    </div>
-  </div>
-
-  <!-- Location -->
-  <div class="col-md-4">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold">Top Locations</div>
-      <div class="card-body small">
-        🇧🇮 Bujumbura <br>
-        🇷🇼 Kigali <br>
-        🇨🇩 Goma
-      </div>
-    </div>
-  </div>
-
-</div>
-
-
-<div class="row g-3">
-
-  <!-- Problems -->
-  <div class="col-md-6">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold text-warning">
-        User Problems
-      </div>
-      <div class="card-body small">
-        • Payment failures <br>
-        • Chat messages not delivered <br>
-        • GPS location inaccurate
-      </div>
-    </div>
-  </div>
-
-  <!-- Errors -->
-  <div class="col-md-6">
-    <div class="card shadow-sm">
-      <div class="card-header fw-semibold text-danger">
-        System Errors
-      </div>
-      <div class="card-body small">
-        • 500 Server error (login) <br>
-        • API timeout on rides <br>
-        • Notification service unavailable
-      </div>
-    </div>
-  </div>
-
-</div>
-
+  }
 </div>
