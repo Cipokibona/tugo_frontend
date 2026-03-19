@@ -28,6 +28,7 @@ type LocationGroup = {
 export class HomeAdmin implements OnInit, AfterViewInit, OnDestroy {
   adminUser: any | null = null;
   loggedInUsers: any[] = [];
+  allBookings: any[] = [];
   confirmedBookings: any[] = [];
   locationGroups: LocationGroup[] = [];
   totalLoggedInUsers = 0;
@@ -36,6 +37,11 @@ export class HomeAdmin implements OnInit, AfterViewInit, OnDestroy {
   totalDriverAmount = 0;
   totalPlatformAmount = 0;
   totalPlatformVatAmount = 0;
+  totalCancelledBookings = 0;
+  selectedDateCancelledBookings = 0;
+  selectedDateDriversCount = 0;
+  selectedDateDriverAmount = 0;
+  selectedDate = this.getTodayDateString();
   loading = true;
   mapLoading = false;
   errorMessage: string | null = null;
@@ -85,16 +91,17 @@ export class HomeAdmin implements OnInit, AfterViewInit, OnDestroy {
 
         this.adminUser = user;
         const allUsers = Array.isArray(users) ? users : [];
-        const allBookings = Array.isArray(bookings) ? bookings : [];
+        this.allBookings = Array.isArray(bookings) ? bookings : [];
 
         this.loggedInUsers = allUsers.filter((candidate) => !!candidate?.last_login);
-        this.confirmedBookings = allBookings.filter((booking) => booking?.status === 'CONFIRMED');
+        this.confirmedBookings = this.allBookings.filter((booking) => booking?.status === 'CONFIRMED');
         this.totalLoggedInUsers = this.loggedInUsers.length;
         this.locationGroups = this.buildLocationGroups(this.loggedInUsers);
         this.usersWithoutLocation =
           this.locationGroups.find((group) => group.label === 'Location not set')?.count ?? 0;
 
         this.computeBookingRevenue();
+        this.computeDateMetrics();
         this.loading = false;
         this.mapMessage = null;
         setTimeout(() => {
@@ -127,6 +134,32 @@ export class HomeAdmin implements OnInit, AfterViewInit, OnDestroy {
     this.totalPlatformAmount = platformTotal;
     this.totalPlatformVatAmount = vatTotal;
     this.totalPaidAmount = driverTotal + platformTotal + vatTotal;
+    this.totalCancelledBookings = this.cancelledBookings.length;
+  }
+
+  private computeDateMetrics(): void {
+    const selectedConfirmedBookings = this.confirmedBookings.filter(
+      (booking) => this.extractDatePart(booking?.booked_at) === this.selectedDate
+    );
+
+    const selectedCancelledBookings = this.cancelledBookings.filter(
+      (booking) => this.extractDatePart(booking?.updated_at || booking?.booked_at) === this.selectedDate
+    );
+
+    this.selectedDateCancelledBookings = selectedCancelledBookings.length;
+    this.selectedDateDriversCount = new Set(
+      selectedConfirmedBookings
+        .map((booking) => booking?.ride_details?.driver)
+        .filter((driverId) => driverId !== null && driverId !== undefined)
+    ).size;
+    this.selectedDateDriverAmount = selectedConfirmedBookings.reduce(
+      (sum, booking) => sum + Number(booking?.ride_details?.price || 0),
+      0
+    );
+  }
+
+  get cancelledBookings(): any[] {
+    return this.allBookings.filter((booking) => booking?.status === 'CANCELLED');
   }
 
   private buildLocationGroups(users: any[]): LocationGroup[] {
@@ -163,6 +196,12 @@ export class HomeAdmin implements OnInit, AfterViewInit, OnDestroy {
 
   detailLabel(user: any): string {
     return user?.first_name || user?.email || 'No details';
+  }
+
+  onSelectedDateChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.selectedDate = target.value || this.getTodayDateString();
+    this.computeDateMetrics();
   }
 
   formatLastLogin(value: string | null | undefined): string {
@@ -283,5 +322,27 @@ export class HomeAdmin implements OnInit, AfterViewInit, OnDestroy {
         error: () => resolve(null),
       });
     });
+  }
+
+  private getTodayDateString(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private extractDatePart(value: string | null | undefined): string {
+    if (!value) return '';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return String(value).slice(0, 10);
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }
