@@ -188,6 +188,8 @@
                       <th>User</th>
                       <th>Location</th>
                       <th>Last Login</th>
+                      <th>Driver Earnings</th>
+                      <th>Driver Earnings Today</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -199,6 +201,8 @@
                         </td>
                         <td>{{ locationLabel(user) }}</td>
                         <td>{{ formatLastLogin(user.last_login) }}</td>
+                        <td>{{ driverEarningsForUser(user.id) | number:'1.0-0' }} BIF</td>
+                        <td>{{ driverEarningsTodayForUser(user.id) | number:'1.0-0' }} BIF</td>
                       </tr>
                     }
                   </tbody>

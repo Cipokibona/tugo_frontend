@@ -198,6 +198,32 @@ export class HomeAdmin implements OnInit, AfterViewInit, OnDestroy {
     return user?.first_name || user?.email || 'No details';
   }
 
+  driverEarningsForUser(userId: number | null | undefined): number {
+    if (userId === null || userId === undefined) {
+      return 0;
+    }
+
+    return this.confirmedBookings.reduce((sum, booking) => {
+      return booking?.ride_details?.driver === userId
+        ? sum + Number(booking?.ride_details?.price || 0)
+        : sum;
+    }, 0);
+  }
+
+  driverEarningsTodayForUser(userId: number | null | undefined): number {
+    if (userId === null || userId === undefined) {
+      return 0;
+    }
+
+    const today = this.getTodayDateString();
+    return this.confirmedBookings.reduce((sum, booking) => {
+      return booking?.ride_details?.driver === userId &&
+        this.extractDatePart(booking?.booked_at) === today
+        ? sum + Number(booking?.ride_details?.price || 0)
+        : sum;
+    }, 0);
+  }
+
   onSelectedDateChange(event: Event): void {
     const target = event.target as HTMLInputElement;
     this.selectedDate = target.value || this.getTodayDateString();
